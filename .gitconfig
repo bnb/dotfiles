@@ -1,0 +1,17 @@
+[user]
+	email = hello@bnb.im
+	name = Tierney Cyren
+	username = bnb
+[core]
+	editor = nano
+[web]
+	browser = google-chrome
+[color]
+	ui = auto
+[github]
+	user = bnb
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
