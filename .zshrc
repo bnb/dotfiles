@@ -1,5 +1,5 @@
 # Path to your oh-my-zsh installation.
-export ZSH="/Users/cyren/.oh-my-zsh"
+export ZSH="$HOME/.oh-my-zsh"
 
 # Theme I want to uses
 ZSH_THEME="amuse"
