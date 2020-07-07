@@ -6,7 +6,7 @@ pathToGitHubDirectory="$HOME/GitHub" # path to the GitHub directory
 export PATH="/Users/$user/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Users/$user/GitHub/build-tools/src"
 
 # Path to your oh-my-zsh installation.
-export ZSH="/Users/$user/.oh-my-zsh"
+export ZSH="$HOME/.oh-my-zsh"
 
 # Theme I want to use
 ZSH_THEME="amuse"
@@ -62,6 +62,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
 
 
+<<<<<<< HEAD
 # set up gh command
 repo () {
 	local repo=$1
@@ -95,3 +96,6 @@ load-nvmrc() {
 }
 add-zsh-hook chpwd load-nvmrc
 load-nvmrc
+=======
+# Custom platform-specific / private stuff goes below here
+>>>>>>> 5d6ffc634aa2eb9e0dd832f0bd3ab7a770cbf03e
