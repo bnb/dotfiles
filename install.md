@@ -1,9 +1,8 @@
 # List of Things to Install
 
-* oh-my-zsh
 * homebrew
 * nvm
 * git
 * make
-* hyper (app)
+* starship
 * Cascadia Code PL (font)
