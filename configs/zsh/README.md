@@ -22,6 +22,8 @@ They're all booleans, so do the following to set them up. I personally set them 
 export VARIABLE_NAME = true
 ```
 
+- `PERSONAL_DOTFILES_PATH`
+  - the path to the cloned dotfiles repository
 - `PERSONAL_SETUP_MACOS`
   - if this is a macOS machine, set to `true`
 - `PERSONAL_SETUP_NVM`
