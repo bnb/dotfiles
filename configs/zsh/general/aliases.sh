@@ -4,3 +4,4 @@ alias a="code-insiders -a" # open the passed path in the current VS Code Insider
 alias i="npx covgen hello@bnb.im && npx license mit && npx gitignore node &&  echo \"package-lock=false\" > .npmrc" # init new project files that can't be init'd by an init command
 alias mainff="git fetch upstream && git checkout main && git merge upstream/main"
 alias masterff="git fetch upstream && git checkout master && git merge upstream/master"
+alias dotfilesupdate="git -C $PERSONAL_DOTFILES_PATH pull"
