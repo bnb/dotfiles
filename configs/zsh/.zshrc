@@ -8,8 +8,6 @@
 #  $PERSONAL_SETUP_WORK: if this is a work machine, set to `true`
 #  $PERSONAL_SETUP_ZSHPLUGINS: if you want to enable my personal plugin config, set to `true`
 
-source $(dirname "$0")/general/autoupdate.sh
-
 if [ -n "$PERSONAL_SETUP_DEBUG" ]
 then
   echo "setting up general"
