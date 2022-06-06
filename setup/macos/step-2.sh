@@ -44,7 +44,6 @@ echo "export PERSONAL_SETUP_MACOS=true" >> ~/.zshrc
 echo "export PERSONAL_SETUP_MACOSBREW=true" >> ~/.zshrc
 echo "export PERSONAL_SETUP_NVM=true" >> ~/.zshrc
 echo "export PERSONAL_SETUP_STARSHIP=true" >> ~/.zshrc
-echo "export PERSONAL_SETUP_ZSHPLUGINS=true" >> ~/.zshrc
 
 # clone my dotfiles repo and set it up
 git clone https://github.com/bnb/dotfiles.git ~/GitHub/bnb/dotfiles
