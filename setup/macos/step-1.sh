@@ -1,0 +1,3 @@
+# do this first and wait for it to be done...
+xcode-select --install
+# ... then do the rest.
