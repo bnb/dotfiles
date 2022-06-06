@@ -26,6 +26,10 @@ export VARIABLE_NAME = true
   - the path to the cloned dotfiles repository
 - `PERSONAL_SETUP_MACOS`
   - if this is a macOS machine, set to `true`
+- `PERSONAL_SETUP_MACOSBREW`
+  - if this is a macOS machine, set to `true`
+- `PERSONAL_SETUP_LINUXBREW`
+  - if this is a Linux machine, set to `true`
 - `PERSONAL_SETUP_NVM`
   - if you'd like to include the shell scripts that make nvm work, set to `true`
 - `PERSONAL_SETUP_STARSHIP`

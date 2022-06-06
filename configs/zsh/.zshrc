@@ -1,7 +1,8 @@
 # Environemnt Variables - set these up in the `.zshrc` that imports this `.zshrc`:
 #
 #  $PERSONAL_DOTFILES_PATH: path to my personal dotfiles repo
-#  $PERSONAL_SETUP_LINUXBREW: if this is a machine you want to use linuxbrew on, set this to
+#  $PERSONAL_SETUP_MACOSBREW: if this is a macOS machine you want to use homebrew on, set this to `true`
+#  $PERSONAL_SETUP_LINUXBREW: if this is a machine you want to use linuxbrew on, set this to `true`
 #  $PERSONAL_SETUP_MACOS: if this is a macOS machine, set to `true`
 #  $PERSONAL_SETUP_NVM: if you'd like to include the shell scripts that make nvm work, set to `true`
 #  $PERSONAL_SETUP_STARSHIP: if using starship.rs, set to `true`
@@ -20,6 +21,16 @@ source $(dirname "$0")/general/language.sh
 source $(dirname "$0")/general/sshKeyPath.sh
 source $(dirname "$0")/general/variables.sh
 
+# check if $PERSONAL_SETUP_MACOSBREW exists and if so, eval linuxbrew 
+if [ -n "$PERSONAL_SETUP_MACOSBREW" ]
+then
+  if [ -n "$PERSONAL_SETUP_DEBUG" ]
+  then
+    echo "setting up homebrew"
+  fi
+  source $(dirname "$0")/homebrew/macos.sh
+fi
+
 # check if $PERSONAL_SETUP_LINUXBREW exists and if so, eval linuxbrew 
 if [ -n "$PERSONAL_SETUP_LINUXBREW" ]
 then
@@ -27,7 +38,7 @@ then
   then
     echo "setting up linuxbrew"
   fi
-  eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+  source $(dirname "$0")/homebrew/linux.sh
 fi
 
 # set up nvm
