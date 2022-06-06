@@ -26,6 +26,11 @@ brew install --cask font-cascadia-mono-pl
 
 # install some apps we'll want
 
+brew install 1password
+brew install google-chrome-canary
+brew install visual-studio-code-insiders
+brew install alfred
+brew install docker
 brew install discord
 brew install spotify
 brew install slack
