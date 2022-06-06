@@ -19,11 +19,11 @@ I use environment variables to enable/disable platform-specific features. The li
 They're all booleans, so do the following to set them up. I personally set them up in the `.zshrc` that impoorts the `.zshrc` from this file so there's zero ambiguity and easy debugging.
 
 ```shell
-export VARIABLE_NAME = true
+export VARIABLE_NAME=true
 ```
 
 - `PERSONAL_DOTFILES_PATH`
-  - the path to the cloned dotfiles repository
+  - the path to the cloned dotfiles repository, which will be a string
 - `PERSONAL_SETUP_MACOS`
   - if this is a macOS machine, set to `true`
 - `PERSONAL_SETUP_MACOSBREW`
@@ -36,5 +36,3 @@ export VARIABLE_NAME = true
   - if using starship.rs, set to `true`
 - `PERSONAL_SETUP_WORK`
   - if this is a work machine, set to `true`
-- `PERSONAL_SETUP_ZSHPLUGINS`
-  - if you want to enable my personal plugin config, set to `true`
