@@ -7,3 +7,4 @@ alias ff:master="git fetch upstream && git checkout master && git merge upstream
 alias update:dotfiles="git -C $PERSONAL_DOTFILES_PATH pull"
 alias update:brew="brew update --force --quiet"
 alias update="update:dotfiles && update:brew"
+alias ls="ls --color=auto"
