@@ -61,16 +61,6 @@ then
   source $(dirname "$0")/starship/init.sh
 fi
 
-# check if $PERSONAL_SETUP_ZSHPLUGINS is true and if so, source the zsh plugins
-if [ -n "$PERSONAL_SETUP_ZSHPLUGINS" ]
-then
-  if [ -n "$PERSONAL_SETUP_DEBUG" ]
-  then
-    echo "setting up zshplugins"
-  fi
-  source $(dirname "$0")/plugins/zshplugins.sh
-fi
-
 # check if $PERSONAL_SETUP_MACOS is true and if so, use source $(dirname "$0")/macos/pathExports.sh 
 if [  -n "$PERSONAL_SETUP_MACOS" ]
 then
