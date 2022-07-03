@@ -48,8 +48,20 @@ then
   then
     echo "setting up nvm"
   fi
-  source $(dirname "$0")/general/nvm.sh
+  source $(dirname "$0")/node/nvm.sh
 fi
+
+
+# set up fnm
+if [ -n "$PERSONAL_SETUP_FNM" ]
+then
+  if [ -n "$PERSONAL_SETUP_DEBUG" ]
+  then
+    echo "setting up fnm"
+  fi
+  source $(dirname "$0")/node/fnm.sh
+fi
+
 
 # check if $PERSONAL_SETUP_STARSHIP is true and if so, set up starship init file
 if [ -n "$PERSONAL_SETUP_STARSHIP" ]

@@ -14,6 +14,7 @@ chmod -R go-w "$(brew --prefix)/share/zsh"
 brew install git
 brew install gh
 brew install nvm
+brew install fnm
 brew install starship
 
 # install fonts with homebrew
