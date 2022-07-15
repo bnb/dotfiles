@@ -37,6 +37,7 @@ brew install docker
 brew install discord
 brew install spotify
 brew install slack
+brew install zoom
 
 # install the off-brand versions of apps we'll want
 
