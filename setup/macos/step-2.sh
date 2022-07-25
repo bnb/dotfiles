@@ -3,7 +3,6 @@ mkdir ~/GitHub
 mkdir ~/GitHub/bnb/
 
 # update macos dependencies because they're sometimes out of date despite just having installed them
-
 softwareupdate --all --install --force
 
 # pull homebrew and set it up
@@ -14,7 +13,6 @@ brew update --force --quiet
 chmod -R go-w "$(brew --prefix)/share/zsh"
 
 # install basics with homebrew
-
 brew install git
 brew install gh
 brew install nvm
@@ -22,7 +20,6 @@ brew install fnm
 brew install starship
 
 # install fonts with homebrew
-
 brew tap homebrew/cask-fonts
 brew install --cask font-cascadia-code
 brew install --cask font-cascadia-code-pl
@@ -30,7 +27,6 @@ brew install --cask font-cascadia-mono
 brew install --cask font-cascadia-mono-pl
 
 # install some apps we'll want
-
 brew install 1password
 brew install alfred
 brew install appcleaner
@@ -41,7 +37,6 @@ brew install slack
 brew install zoom
 
 # install the off-brand versions of apps we'll want
-
 brew tap homebrew/cask-versions
 brew install google-chrome-canary
 brew install visual-studio-code-insiders
