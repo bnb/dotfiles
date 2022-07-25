@@ -2,6 +2,9 @@
 mkdir ~/GitHub
 mkdir ~/GitHub/bnb/
 
+# disable DS_store file generation
+defaults write com.apple.desktopservices DSDontWriteNetworkStores true
+
 # update macos dependencies because they're sometimes out of date despite just having installed them
 softwareupdate --all --install --force
 
