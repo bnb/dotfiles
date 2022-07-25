@@ -33,11 +33,12 @@ brew install --cask font-cascadia-mono-pl
 
 brew install 1password
 brew install alfred
+brew install appcleaner
 brew install docker
 brew install discord
 brew install spotify
 brew install slack
-brew install appcleaner
+brew install zoom
 
 # install the off-brand versions of apps we'll want
 
@@ -57,4 +58,4 @@ echo "export PERSONAL_SETUP_STARSHIP=true" >> ~/.zshrc
 
 # clone my dotfiles repo and set it up
 git clone https://github.com/bnb/dotfiles.git ~/GitHub/bnb/dotfiles
-echo "source ~/GitHub/bnb/dotfiles/configs/zsh/.zshrc" > ~/.zshrc
+echo "source ~/GitHub/bnb/dotfiles/configs/zsh/.zshrc" >> ~/.zshrc
