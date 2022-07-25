@@ -8,3 +8,5 @@ alias update:dotfiles="git -C $PERSONAL_DOTFILES_PATH pull"
 alias update:brew="brew update --force --quiet"
 alias update="update:dotfiles && update:brew"
 alias ls="ls --color=auto"
+alias config:git="source $PERSONAL_DOTFILES_PATH/configs/zsh/general/config-git.sh" # doesn't seem to work because of permissions but wanted to keep it
+alias config:npm="source $PERSONAL_DOTFILES_PATH/configs/zsh/general/config-npm.sh" # doesn't seem to work because of permissions but wanted to keep it
