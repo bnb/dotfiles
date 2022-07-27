@@ -48,7 +48,7 @@ brew install visual-studio-code-insiders
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # echo a basic config for the personal dotfiles to zshrc
-echo "export PERSONAL_DOTFILES_PATH='~/GitHub/bnb/dotfiles'" >> ~/.zshrc
+echo "export PERSONAL_DOTFILES_PATH='~/GitHub/bnb/dotfiles'" > ~/.zshrc
 echo "export PERSONAL_SETUP_MACOS=true" >> ~/.zshrc
 echo "export PERSONAL_SETUP_MACOSBREW=true" >> ~/.zshrc
 echo "export PERSONAL_SETUP_NVM=true" >> ~/.zshrc
