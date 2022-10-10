@@ -24,10 +24,10 @@ brew install starship
 
 # install fonts with homebrew
 brew tap homebrew/cask-fonts
-brew install --cask font-cascadia-code
-brew install --cask font-cascadia-code-pl
-brew install --cask font-cascadia-mono
-brew install --cask font-cascadia-mono-pl
+brew install font-cascadia-code
+brew install font-cascadia-code-pl
+brew install font-cascadia-mono
+brew install font-cascadia-mono-pl
 
 # install some apps we'll want
 brew install 1password
@@ -43,6 +43,8 @@ brew install zoom
 brew tap homebrew/cask-versions
 brew install google-chrome-canary
 brew install visual-studio-code-insiders
+brew install appcleaner
+brew install karabiner-elements
 
 # install ohmyzsh
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
