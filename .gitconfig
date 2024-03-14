@@ -2,6 +2,7 @@
 	email = hello@bnb.im
 	name = Tierney Cyren
 	username = bnb
+	signingkey = ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCqPvkJPs/pYz+/+9231qVBlrfdtmvc34ZjiAzUlnsMkQBTUUzqFqTWA83CrgKB7KCh8+YuBq0s6CtN4FbAw2Ub5X/ntjCzOf3HPraOf6FgtWw3VPjLe0Ou0dZRsPKvncqWMNt1+Jd2oDScK3LCYDfiswNPww2R7cUAQSGxURfUdeFgHQP+Jel38uDI3z+DjbBF/KThZdoe1Jnhg1mj738GM83k0mLZ5y4AXxYfYwmBp9Kiqly3tcZilQ2N4LOVNt5T0velhfHzJ6cSULkT+9tS01ZZsDK6A7R6JQWSAt2dVAqQQyAq26g+UQP25ZJu7pWjYUikl0+2cUe1Vz7i6lKdFO6ckzaeZBEpI2KvNaL7wXFolL3FeXAHrBQdXj2bXbItnA3hPo2s6Zm+OV5iF3byEr8n/49GCIUZAuKY8ZYOHnlaon+yHeHHqAcOqUah4EOiTUD9oQ5W2nkbJOv3PSap/01/e4ZCQfcRRbYJIaMYPGsk22SUKgFA9w2mYGBwCm5OYadGfVXJVFwtqTQvoeuveOkRmYHGgGM2zucEVx6guW78sTfsE/24kWprjF3L9rM6FQQYZHpwNQbm9F5VIT92lOlbdTlyT4DRuMDxPL4WLXNjNFxbEQtAFnaxbJQaCL8CFuZvr1HiXwXbWiAWBNR9R6BTwsI5UwoG1sV/lTjT5Q==
 [core]
 	editor = nano
 [web]
@@ -15,3 +16,10 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+[commit]
+	gpgsign = true
+	

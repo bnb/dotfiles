@@ -62,3 +62,7 @@ echo "source ~/GitHub/bnb/dotfiles/configs/zsh/.zshrc" >> ~/.zshrc
 
 # set `main` to be default git branch
 git config --global init.defaultBranch
+
+# symlink dotfiles .gitconfig
+rm ~/.gitconfig
+ln -s ~/GitHub/bnb/dotfiles/.gitconfig ~/.gitconfig
