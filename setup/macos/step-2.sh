@@ -66,3 +66,7 @@ git config --global init.defaultBranch
 # symlink dotfiles .gitconfig
 rm ~/.gitconfig
 ln -s ~/GitHub/bnb/dotfiles/.gitconfig ~/.gitconfig
+
+# symlink ~/.ssh/config
+rm ~/.ssh/config
+ln -s ~/GitHub/bnb/dotfiles/config ~/.ssh/config
