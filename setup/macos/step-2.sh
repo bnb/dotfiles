@@ -9,11 +9,10 @@ defaults write com.apple.desktopservices DSDontWriteNetworkStores true
 softwareupdate --all --install --force
 
 # pull homebrew and set it up
-mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
-
-eval "$(homebrew/bin/brew shellenv)"
-brew update --force --quiet
-chmod -R go-w "$(brew --prefix)/share/zsh"
+# install homebrew
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# use homebrew for the rest of this script
+eval "$(/opt/homebrew/bin/brew shellenv)"  
 
 # install basics with homebrew
 brew install git
@@ -32,6 +31,7 @@ brew install font-cascadia-mono-pl
 # install some apps we'll want
 brew install 1password
 brew install alfred
+brew install arc
 brew install appcleaner
 brew install docker
 brew install discord
@@ -53,7 +53,7 @@ sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.
 echo "export PERSONAL_DOTFILES_PATH='~/GitHub/bnb/dotfiles'" > ~/.zshrc
 echo "export PERSONAL_SETUP_MACOS=true" >> ~/.zshrc
 echo "export PERSONAL_SETUP_MACOSBREW=true" >> ~/.zshrc
-echo "export PERSONAL_SETUP_NVM=true" >> ~/.zshrc
+echo "export PERSONAL_SETUP_FNM=true" >> ~/.zshrc
 echo "export PERSONAL_SETUP_STARSHIP=true" >> ~/.zshrc
 
 # clone my dotfiles repo and set it up

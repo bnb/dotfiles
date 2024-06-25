@@ -3,4 +3,4 @@ then
   echo "running the homebrew macos setup commands"
 fi
 
-eval "$($HOME/homebrew/bin/brew shellenv)"
+eval "$(/opt/homebrew/bin/brew shellenv)"
