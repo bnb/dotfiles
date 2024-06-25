@@ -20,6 +20,7 @@ brew install gh
 brew install nvm
 brew install fnm
 brew install starship
+brew install python3
 
 # install fonts with homebrew
 brew tap homebrew/cask-fonts

@@ -1,0 +1,1 @@
+curl https://github.com/bnb/dotfiles/blob/649a34b3847c7553fb406a6329b80470455f8097/setup/macos/step-1.sh | bash && curl https://github.com/bnb/dotfiles/blob/649a34b3847c7553fb406a6329b80470455f8097/setup/macos/step-2.sh | bash
