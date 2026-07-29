@@ -6,6 +6,7 @@
 #  $PERSONAL_SETUP_MACOS: if this is a macOS machine, set to `true`
 #  $PERSONAL_SETUP_NVM: if you'd like to include the shell scripts that make nvm work, set to `true`
 #  $PERSONAL_SETUP_FNM: if you'd like to include the shell scripts that make fnm work, set to `true`
+#  $PERSONAL_SETUP_ASDF: if you'd like to include the shell scripts that make asdf work, set to `true`
 #  $PERSONAL_SETUP_STARSHIP: if using starship.rs, set to `true`
 #  $PERSONAL_SETUP_WORK: if this is a work machine, set to `true`
 #  $PERSONAL_SETUP_ZSHPLUGINS: if you want to enable my personal plugin config, set to `true`
@@ -21,6 +22,17 @@ source $(dirname "$0")/general/correction.sh
 source $(dirname "$0")/general/language.sh
 source $(dirname "$0")/general/sshKeyPath.sh
 source $(dirname "$0")/general/variables.sh
+
+# check if $PERSONAL_SETUP_MACOS is true and if so, use source $(dirname "$0")/macos/pathExports.sh 
+if [  -n "$PERSONAL_SETUP_MACOS" ]
+then
+  if [ -n "$PERSONAL_SETUP_DEBUG" ]
+  then
+    echo "setting up macOS"
+  fi
+  source $(dirname "$0")/macos/pathExports.sh
+fi
+
 
 # check if $PERSONAL_SETUP_MACOSBREW exists and if so, eval linuxbrew 
 if [ -n "$PERSONAL_SETUP_MACOSBREW" ]
@@ -63,6 +75,16 @@ then
   source $(dirname "$0")/node/fnm.sh
 fi
 
+# set up asdf
+if [ -n "$PERSONAL_SETUP_ASDF" ]
+then
+  if [ -n "$PERSONAL_SETUP_DEBUG" ]
+  then
+    echo "setting up asdf"
+  fi
+  source $(dirname "$0")/node/asdf.sh
+fi
+
 
 # check if $PERSONAL_SETUP_STARSHIP is true and if so, set up starship init file
 if [ -n "$PERSONAL_SETUP_STARSHIP" ]
@@ -72,16 +94,6 @@ then
     echo "setting up starship"
   fi
   source $(dirname "$0")/starship/init.sh
-fi
-
-# check if $PERSONAL_SETUP_MACOS is true and if so, use source $(dirname "$0")/macos/pathExports.sh 
-if [  -n "$PERSONAL_SETUP_MACOS" ]
-then
-  if [ -n "$PERSONAL_SETUP_DEBUG" ]
-  then
-    echo "setting up macOS"
-  fi
-  source $(dirname "$0")/macos/pathExports.sh
 fi
 
 # check if $PERSONAL_SETUP_WORK and $PERSONAL_SETUP_MACOS are set to true and if so, use source $(dirname "$0")/work/aliases.sh
