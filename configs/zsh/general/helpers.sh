@@ -20,3 +20,13 @@ __personal_debug() {
   fi
   return 0
 }
+
+# usage: __personal_warn "nvm is enabled but isn't installed"
+#
+# unlike __personal_debug this always prints, on stderr - it's for a flag that
+# was deliberately turned on and then couldn't be honoured, which is worth
+# knowing about even when $PERSONAL_SETUP_DEBUG is off
+__personal_warn() {
+  printf 'dotfiles: %s\n' "$*" >&2
+  return 0
+}
