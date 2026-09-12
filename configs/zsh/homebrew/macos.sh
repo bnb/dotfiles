@@ -1,6 +1,3 @@
-if [ -n "$PERSONAL_SETUP_DEBUG" ]
-then
-  echo "running the homebrew macos setup commands"
-fi
+__personal_debug "running the homebrew macos setup commands"
 
 eval "$(/opt/homebrew/bin/brew shellenv)"

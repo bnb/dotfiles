@@ -1,15 +1,9 @@
 # setup starship
 
-if [ -n "$PERSONAL_SETUP_DEBUG" ]
-then
-  echo "eval'ing starship init zsh"
-fi
+__personal_debug "eval'ing starship init zsh"
 
 eval "$(starship init zsh)"
 
-if [ -n "$PERSONAL_SETUP_DEBUG" ]
-then
-  echo "exporting starship config env var"
-fi
+__personal_debug "exporting starship config env var"
 
 export STARSHIP_CONFIG=$pathToGitHubDirectory/bnb/dotfiles/configs/zsh/starship/starship.toml

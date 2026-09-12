@@ -1,7 +1,4 @@
-if [ -n "$PERSONAL_SETUP_DEBUG" ]
-then
-  echo "exporting a lot of macOS paths"
-fi
+__personal_debug "exporting a lot of macOS paths"
 
 export PATH="/Users/$user/.local/bin:$PATH"
 export PATH="/Users/$user/bin:$PATH"

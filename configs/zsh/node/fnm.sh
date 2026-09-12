@@ -1,7 +1,4 @@
-if [ -n "$PERSONAL_SETUP_DEBUG" ]
-then
-  echo "eval'ing `fnm env`"
-fi
+__personal_debug "eval'ing fnm env"
 
 # set up fnm
 eval $(fnm env)

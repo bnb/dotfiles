@@ -1,6 +1,3 @@
-if [ -n "$PERSONAL_SETUP_DEBUG" ]
-then
-  echo "running the linuxbrew setup command"
-fi
+__personal_debug "running the linuxbrew setup command"
 
 eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)

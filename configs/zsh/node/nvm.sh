@@ -1,7 +1,4 @@
-if [ -n "$PERSONAL_SETUP_DEBUG" ]
-then
-  echo "exporting NVM_DIR and running some commmands"
-fi
+__personal_debug "exporting NVM_DIR and running some commmands"
 
 # set up nvm
 export NVM_DIR="$HOME/.nvm"
