@@ -112,6 +112,11 @@ fi
 # check if $PERSONAL_SETUP_WORK and $PERSONAL_SETUP_MACOS are both true and if so, load the work aliases
 if __personal_enabled "$PERSONAL_SETUP_WORK" && __personal_enabled "$PERSONAL_SETUP_MACOS"
 then
-  __personal_debug "setting up work"
-  source "$PERSONAL_ZSH_DIR/work/aliases.sh"
+  if [ -f "$PERSONAL_ZSH_DIR/work/aliases.sh" ]
+  then
+    __personal_debug "setting up work"
+    source "$PERSONAL_ZSH_DIR/work/aliases.sh"
+  else
+    __personal_debug "skipping work: configs/zsh/work/aliases.sh doesn't exist"
+  fi
 fi

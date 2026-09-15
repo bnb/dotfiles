@@ -10,12 +10,22 @@ typeset -U path PATH
 __personal_path=(
   "$HOME/.local/bin"
   "$HOME/bin"
-  "$HOME/GitHub/build-tools/src"
-  /opt/homebrew/bin
-  /opt/homebrew/sbin
-  /opt/homebrew/opt/python/libexec/bin # unversioned `python`/`pip`; the old /usr/local path here was Intel-only and never existed on this machine
-  /usr/local/bin
+  "$PERSONAL_GITHUB_DIR/build-tools/src"
 )
+
+# brew's prefix differs between apple silicon and intel, so ask rather than
+# hardcode - the /opt/homebrew paths that used to be here were dead weight on
+# an intel mac
+if __personal_brew_prefix
+then
+  __personal_path+=(
+    "$__PERSONAL_BREW_PREFIX/bin"
+    "$__PERSONAL_BREW_PREFIX/sbin"
+    "$__PERSONAL_BREW_PREFIX/opt/python/libexec/bin" # unversioned `python`/`pip`
+  )
+fi
+
+__personal_path+=(/usr/local/bin)
 
 # (N-/) drops any of the above that isn't a real directory, so a dead entry
 # can't sit in front of a live one

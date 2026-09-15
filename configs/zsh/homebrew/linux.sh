@@ -1,8 +1,12 @@
 __personal_debug "running the linuxbrew setup command"
 
-if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]
+# /home/linuxbrew/.linuxbrew is only linuxbrew's default - an unprivileged
+# install lands elsewhere, so resolve it rather than assuming. Set
+# $HOMEBREW_PREFIX before sourcing if brew lives somewhere unusual.
+if __personal_brew_prefix
 then
-  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  __personal_debug "found brew at $__PERSONAL_BREW_PREFIX"
+  eval "$("$__PERSONAL_BREW_PREFIX/bin/brew" shellenv)"
 else
-  __personal_debug "skipping linuxbrew: /home/linuxbrew/.linuxbrew/bin/brew isn't there"
+  __personal_debug "skipping linuxbrew: no brew in \$HOMEBREW_PREFIX or /home/linuxbrew/.linuxbrew"
 fi
