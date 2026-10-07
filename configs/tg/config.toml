@@ -1,0 +1,13 @@
+# tg - the Tangled CLI (github.com/alyraffauf/tg)
+#
+# setup.sh symlinks this to ~/.config/tg/config.toml. Settings resolve flags,
+# then TG_* environment variables, then this file, then tg's defaults.
+
+# The account tg acts as in my terminal: bnb.im. It's the DID rather than the
+# handle because a DID never changes.
+#
+# Pinned here because otherwise tg uses whichever account logged in most
+# recently, and that's sometimes @bot.bnb.im, the account the AI agents use
+# (configs/ai). They pick it with TG_ACCOUNT, which beats this file, so pinning
+# mine here doesn't affect them.
+account = "did:plc:uashgn65n5z7aqwk5cbuba5c"

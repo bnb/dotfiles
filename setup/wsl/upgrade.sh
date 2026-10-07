@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+#
 # Does a full Ubuntu release upgrade in WSL. It is interactive by design (the
 # release upgrader asks real questions), it can take a long time, and it can
 # leave the distro in a state that needs a `wsl --shutdown` afterwards. Run it

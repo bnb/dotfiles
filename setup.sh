@@ -34,21 +34,51 @@ if [ -z "$_self" ] || [ ! -f "$_self" ]
 then
   echo "==> bootstrapping: no local copy of the repo, fetching one"
 
+  # macOS ships /usr/bin/git as a stub that only works once the Command Line
+  # Tools are installed, so `command -v git` passing there proves nothing - the
+  # clone would just pop up the installer and fail. Install them first and
+  # wait, the same way setup/macos.sh does.
+  if [ "$(uname -s)" = "Darwin" ] && ! xcode-select -p >/dev/null 2>&1
+  then
+    echo "==> installing the Xcode Command Line Tools - accept the dialog that opens, and this waits for it"
+    xcode-select --install >/dev/null 2>&1 || true
+    _waited=0
+    until pkgutil --pkg-info=com.apple.pkg.CLTools_Executables >/dev/null 2>&1
+    do
+      if [ "$_waited" -ge 1800 ]
+      then
+        echo "!!! the Command Line Tools didn't finish installing within 30 minutes - finish the installer and re-run this" >&2
+        exit 1
+      fi
+      if [ $((_waited % 60)) -eq 0 ]
+      then
+        echo "    still waiting for the Command Line Tools... ($((_waited / 60))m)"
+      fi
+      sleep 10
+      _waited=$((_waited + 10))
+    done
+  fi
+
   if ! command -v git >/dev/null 2>&1
   then
     echo "!!! git isn't installed yet." >&2
-    if [ "$(uname -s)" = "Darwin" ]
-    then
-      echo "    run \`xcode-select --install\`, let it finish, then re-run this." >&2
-    else
-      echo "    install git (e.g. \`sudo apt install -y git\`) and re-run this." >&2
-    fi
+    echo "    install git (e.g. \`sudo apt install -y git\`) and re-run this." >&2
     exit 1
   fi
 
   if [ -d "$DOTFILES_DIR/.git" ]
   then
-    echo "==> already cloned at $DOTFILES_DIR"
+    # Nothing is running from this clone yet - unlike a ./setup.sh run - so
+    # it's safe to bring it up to date before handing over. Without this the
+    # one-liner would keep running whatever was last pulled.
+    if [ -n "$(git -C "$DOTFILES_DIR" status --porcelain 2>/dev/null)" ]
+    then
+      echo "==> already cloned at $DOTFILES_DIR, with uncommitted changes - not pulling"
+    else
+      echo "==> already cloned at $DOTFILES_DIR - pulling"
+      git -C "$DOTFILES_DIR" pull --ff-only ||
+        echo "!!! git pull failed - carrying on with the clone as it is" >&2
+    fi
   else
     mkdir -p "$(dirname "$DOTFILES_DIR")"
     echo "==> cloning $DOTFILES_REPO_URL into $DOTFILES_DIR"
@@ -63,31 +93,25 @@ then
   exec bash "$DOTFILES_DIR/setup.sh" "$@"
 fi
 
-DOTFILES_REPO_ROOT="$(cd "$(dirname "$_self")" && pwd)"
-export DOTFILES_REPO_ROOT
-
-# Running from a clone somewhere other than the canonical path is fine - use
-# the clone we were actually launched from rather than cloning a second copy.
-if [ -d "$DOTFILES_REPO_ROOT/.git" ]
-then
-  DOTFILES_DIR="$DOTFILES_REPO_ROOT"
-fi
+# From here on, everything uses the copy of the repo this was launched from,
+# wherever it is, rather than cloning a second one.
+DOTFILES_DIR="$(cd "$(dirname "$_self")" && pwd)"
 export DOTFILES_DIR
 
 # shellcheck source=setup/lib/common.sh
-. "$DOTFILES_REPO_ROOT/setup/lib/common.sh"
+. "$DOTFILES_DIR/setup/lib/common.sh"
 
 
 # Dispatch
 log_step "dotfiles setup starting"
-log_info "repo:  $DOTFILES_REPO_ROOT"
+log_info "repo:  $DOTFILES_DIR"
 log_info "shell: bash ${BASH_VERSION:-unknown}"
 
 case "$(uname -s)" in
   Darwin)
     log_info "platform: macOS"
     # shellcheck source=setup/macos.sh
-    . "$DOTFILES_REPO_ROOT/setup/macos.sh"
+    . "$DOTFILES_DIR/setup/macos.sh"
     ;;
   Linux)
     if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null
@@ -97,7 +121,7 @@ case "$(uname -s)" in
       log_info "platform: Linux"
     fi
     # shellcheck source=setup/linux.sh
-    . "$DOTFILES_REPO_ROOT/setup/linux.sh"
+    . "$DOTFILES_DIR/setup/linux.sh"
     ;;
   *)
     log_error "unsupported platform: $(uname -s)"

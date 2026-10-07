@@ -1,16 +1,18 @@
 __personal_debug "exporting a lot of macOS paths"
 
-# zsh keeps the $path array and $PATH in sync; -U makes it drop duplicates as
-# they're added, so re-sourcing this file (or `brew shellenv` running after it)
-# can't stack the same directory up over and over.
-typeset -U path PATH
-
-# Highest priority first.
+# Highest priority first. .zshrc makes $path drop duplicates, keeping the first,
+# and runs `brew shellenv` before this, so the brew entries below move back into
+# their place in this list instead of sitting in front of ~/.local/bin.
 
 __personal_path=(
   "$HOME/.local/bin"
   "$HOME/bin"
   "$PERSONAL_GITHUB_DIR/build-tools/src"
+  # rust/cargo.sh and pnpm/pnpm.sh, sourced just before this, put these on
+  # $PATH; listing them here moves them behind the three above and ahead of
+  # brew. A pnpm bin that doesn't exist yet stays where pnpm.sh put it.
+  "${CARGO_HOME:-$HOME/.cargo}/bin"
+  ${PNPM_HOME:+"$PNPM_HOME/bin"}
 )
 
 # brew's prefix differs between apple silicon and intel, so ask rather than

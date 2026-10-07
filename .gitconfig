@@ -1,9 +1,11 @@
 # ~/.gitconfig — portable settings
 #
-# This file is committed to the dotfiles repo and symlinked to ~/.gitconfig by
-# setup.sh, so every line has to work unmodified on macOS, Linux and WSL.
-# Anything that depends on a particular machine lives in ~/.gitconfig.local,
-# which setup.sh generates and which is included at the bottom of this file.
+# This file is committed to the dotfiles repo and [include]d by the small
+# ~/.gitconfig that setup.sh writes, so every line has to work unmodified on
+# macOS, Linux and WSL. Anything that depends on a particular machine lives in
+# ~/.gitconfig.local, which setup.sh generates and which is included near the
+# bottom of this file. `git config --global` writes land in ~/.gitconfig after
+# that include, so they beat both files.
 
 [user]
 	name = Tierney Cyren
@@ -31,10 +33,23 @@
 	process = git-lfs filter-process
 	required = true
 
-# Machine-specific settings (commit signing, work identity overrides) live here.
-# setup.sh writes it; git silently ignores the include when the file is absent.
+# Machine-specific settings (commit signing, mostly) live here. setup.sh writes
+# it; git silently ignores the include when the file is absent.
 #
-# Keep this last: includes are expanded in place, so anything in the local file
-# overrides the defaults above.
+# Keep this after everything but the work includes below: includes are expanded
+# in place, so anything in the local file overrides the defaults above.
 [include]
 	path = ~/.gitconfig.local
+
+# Work repos commit, sign and push as tierney@assistant-ui.com: anything under
+# ~/GitHub/assistant-ui, and any repo with a remote in the assistant-ui org
+# wherever it's cloned. They come after the local file so the work signing key
+# beats the personal one. The path is relative to this file, in the repo.
+[includeIf "gitdir:~/GitHub/assistant-ui/"]
+	path = configs/git/assistant-ui.gitconfig
+[includeIf "hasconfig:remote.*.url:git@github.com:assistant-ui/**"]
+	path = configs/git/assistant-ui.gitconfig
+[includeIf "hasconfig:remote.*.url:ssh://git@github.com/assistant-ui/**"]
+	path = configs/git/assistant-ui.gitconfig
+[includeIf "hasconfig:remote.*.url:https://github.com/assistant-ui/**"]
+	path = configs/git/assistant-ui.gitconfig

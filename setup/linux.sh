@@ -8,17 +8,29 @@ set -uo pipefail
 
 if [ -z "${DOTFILES_COMMON_SOURCED:-}" ]
 then
-  _linux_self="${BASH_SOURCE[0]}"
-  DOTFILES_REPO_ROOT="$(cd "$(dirname "$_linux_self")/.." && pwd)"
-  export DOTFILES_REPO_ROOT
-  [ -d "$DOTFILES_REPO_ROOT/.git" ] && export DOTFILES_DIR="$DOTFILES_REPO_ROOT"
-  # shellcheck source=lib/common.sh
-  . "$DOTFILES_REPO_ROOT/setup/lib/common.sh"
+  DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  export DOTFILES_DIR
+  # shellcheck source=setup/lib/common.sh
+  . "$DOTFILES_DIR/setup/lib/common.sh"
 fi
 
 # Everything homebrew-on-linux needs to build, plus zsh itself. curl/file/procps
-# are homebrew's own documented prerequisites.
-APT_PACKAGES="build-essential curl file git procps zsh"
+# are homebrew's own documented prerequisites. git-lfs because the committed
+# .gitconfig sets the lfs filter as required.
+APT_PACKAGES="build-essential curl file git git-lfs procps zsh"
+
+# usage: apt_get install -y zsh
+#
+# noninteractive so a package with a config prompt can't park the run forever,
+# and passed through `env` because sudo resets the environment - an exported
+# DEBIAN_FRONTEND never reaches apt. The dpkg options keep an existing config
+# file on upgrade instead of asking which one to use.
+apt_get() {
+  sudo_run env DEBIAN_FRONTEND=noninteractive apt-get \
+    -o Dpkg::Options::=--force-confdef \
+    -o Dpkg::Options::=--force-confold \
+    "$@"
+}
 
 install_apt_packages() {
   log_step "installing apt packages: $APT_PACKAGES"
@@ -29,35 +41,30 @@ install_apt_packages() {
     return 0
   fi
 
-  # noninteractive so a package with a config prompt can't park the run forever
-  export DEBIAN_FRONTEND=noninteractive
-
-  sudo_run apt-get update -y || record_failure "apt-get update"
-  sudo_run apt-get upgrade -y || log_warn "apt-get upgrade didn't exit cleanly - carrying on"
+  apt_get update -y || record_failure "apt-get update"
+  apt_get upgrade -y || log_warn "apt-get upgrade didn't exit cleanly - carrying on"
 
   # shellcheck disable=SC2086
-  if ! sudo_run apt-get install -y $APT_PACKAGES
+  if ! apt_get install -y $APT_PACKAGES
   then
     record_failure "apt-get install $APT_PACKAGES"
   fi
 }
 
-LINUX_FORMULAE="gh nvm fnm asdf starship shellcheck"
+# One node version manager: fnm, the one PERSONAL_SETUP_FNM below loads.
+# ripgrep and fd because configs/ai/instructions.md tells agents to use them.
+LINUX_FORMULAE="gh opencode fnm pnpm starship shellcheck rust ripgrep fd alyraffauf/tap/tg"
 
-install_linux_packages() {
-  log_step "installing packages"
+# linuxbrew's zsh completions ship group-writable, which zsh's compaudit
+# refuses to load from. brew's own docs tell you to do exactly this. Run after
+# the packages, so it covers whatever they just added.
+fix_linuxbrew_completion_permissions() {
+  local share="${HOMEBREW_PREFIX:-}/share/zsh"
 
-  # linuxbrew's zsh completions ship group-writable, which zsh's compaudit
-  # refuses to load from. brew's own docs tell you to do exactly this.
-  local share
-  share="$(brew --prefix 2>/dev/null)/share/zsh"
-  if [ -d "$share" ]
+  if [ -n "${HOMEBREW_PREFIX:-}" ] && [ -d "$share" ]
   then
     chmod -R go-w "$share" 2>/dev/null || true
   fi
-
-  # shellcheck disable=SC2086
-  brew_install_batch --formula $LINUX_FORMULAE
 }
 
 # -----------------------------------------------------------------------------
@@ -114,18 +121,13 @@ main_linux() {
   install_apt_packages
   ensure_directory_invariant
 
-  if ensure_homebrew
-  then
-    install_linux_packages
-  else
-    log_warn "skipping packages - homebrew isn't usable"
-  fi
+  install_packages "$LINUX_FORMULAE"
+  fix_linuxbrew_completion_permissions
 
   finalize_shell_config \
     PERSONAL_SETUP_LINUXBREW \
     PERSONAL_SETUP_FNM \
-    PERSONAL_SETUP_STARSHIP \
-    PERSONAL_SETUP_ZSHPLUGINS
+    PERSONAL_SETUP_STARSHIP
 
   ensure_zsh_login_shell || true
 }

@@ -1,0 +1,17 @@
+{
+  "description": "github.com/bnb/dotfiles configs/ai: Codex never reads an AGENTS.md above a repo's root, so this adds ~/GitHub/assistant-ui/AGENTS.md to sessions in the repos under it",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$PWD/\" in \"$HOME\"/GitHub/assistant-ui/?*) cat \"$HOME\"/GitHub/assistant-ui/AGENTS.md ;; esac",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

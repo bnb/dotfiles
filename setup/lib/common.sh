@@ -1,3 +1,5 @@
+# shellcheck shell=bash
+
 if [ "${BASH_SOURCE[0]}" = "${0}" ]
 then
   echo "setup/lib/common.sh is a library - source it, don't run it" >&2
@@ -14,16 +16,21 @@ DOTFILES_COMMON_SOURCED=1
 #
 # These two trees are the ONE thing guaranteed to be consistent on every
 # machine. Add a name to either array and it gets created on the next run.
+#
+# The roots honour $PERSONAL_GITHUB_DIR / $PERSONAL_TANGLED_DIR, with the same
+# defaults as configs/zsh/general/variables.sh, so the `github` and `tangled`
+# aliases always land where this run made the directories.
+GITHUB_DIR="${PERSONAL_GITHUB_DIR:-$HOME/GitHub}"
+TANGLED_DIR="${PERSONAL_TANGLED_DIR:-$HOME/tangled}"
 GITHUB_ORGS=(bnb)
 TANGLED_ORGS=(bnb.im)
 
-# Where the dotfiles clone lives. $DOTFILES_DIR overrides it.
-DOTFILES_REPO_URL="${DOTFILES_REPO_URL:-https://github.com/bnb/dotfiles.git}"
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/GitHub/bnb/dotfiles}"
+# My work checkouts. Only a machine that has this directory gets the work keys
+# and instructions (link_work_files).
+WORK_DIR="$GITHUB_DIR/assistant-ui"
 
-# Set by setup.sh to the directory the running copy of the repo lives in, so
-# ensure_dotfiles_repo() knows not to `git pull` underneath itself.
-DOTFILES_REPO_ROOT="${DOTFILES_REPO_ROOT:-}"
+# $DOTFILES_DIR is the copy of the repo setup is running from. setup.sh,
+# macos.sh and linux.sh set it before sourcing this.
 
 # Logging
 #
@@ -64,10 +71,6 @@ DOTFILES_FAILURES=()
 record_failure() {
   DOTFILES_FAILURES+=("$*")
   log_error "$*"
-}
-
-dotfiles_failure_count() {
-  printf '%s\n' "${#DOTFILES_FAILURES[@]}"
 }
 
 # always returns 0 - it reports, it doesn't decide anything
@@ -173,7 +176,7 @@ _dotfiles_stop_sudo_keepalive() {
 # Exit handling
 #
 # Installed once, at source time, so the summary prints whether the script
-# finished cleanly, tripped over `set -e`, or was interrupted.
+# finished cleanly, exited early, or was interrupted.
 _dotfiles_on_exit() {
   local status=$?
 
@@ -221,37 +224,75 @@ backup_path() {
   mv "$target" "$backup"
 }
 
+# usage: ensure_dir "$HOME/GitHub/bnb"
+#
+# Creates the directory if it's missing, then verifies it's really there and
+# writable, since cloning into it is the next thing anyone does. Anything wrong
+# is recorded, and a file or broken symlink already at that path is left alone.
 ensure_dir() {
   local dir="$1"
 
   if [ -d "$dir" ]
   then
     log_info "already there: $dir"
-    return 0
+  elif [ -e "$dir" ] || [ -L "$dir" ]
+  then
+    record_failure "$dir exists but isn't a directory - leaving it alone; move it aside and re-run"
+    return 1
+  else
+    log_info "creating: $dir"
+    mkdir -p "$dir"
   fi
 
-  log_info "creating: $dir"
-  mkdir -p "$dir"
+  if [ ! -d "$dir" ]
+  then
+    record_failure "couldn't create $dir"
+    return 1
+  fi
+
+  if [ ! -w "$dir" ]
+  then
+    record_failure "$dir isn't writable by $(id -un) - fix its ownership and re-run"
+    return 1
+  fi
+
+  return 0
 }
 
-# ~/GitHub/<org> and ~/tangled/<org> for every name in the arrays at the top.
-ensure_directory_invariant() {
+# usage: ensure_tree "$GITHUB_DIR" bnb
+#
+# The root is ensured on its own rather than left to the orgs' mkdir -p, so it
+# exists (and the alias that cds into it works) even with no orgs listed. If
+# the root is broken, its orgs are skipped instead of each failing again.
+ensure_tree() {
+  local root="$1"
   local org
+  shift
 
+  ensure_dir "$root" || return 1
+
+  for org in "$@"
+  do
+    ensure_dir "$root/$org"
+  done
+
+  return 0
+}
+
+# $GITHUB_DIR/<org> and $TANGLED_DIR/<org> for every name in the arrays at the
+# top, plus the roots themselves.
+ensure_directory_invariant() {
   log_step "making sure the standard directories exist"
 
-  for org in ${GITHUB_ORGS[@]+"${GITHUB_ORGS[@]}"}
-  do
-    ensure_dir "$HOME/GitHub/$org"
-  done
-
-  for org in ${TANGLED_ORGS[@]+"${TANGLED_ORGS[@]}"}
-  do
-    ensure_dir "$HOME/tangled/$org"
-  done
+  ensure_tree "$GITHUB_DIR" ${GITHUB_ORGS[@]+"${GITHUB_ORGS[@]}"}
+  ensure_tree "$TANGLED_DIR" ${TANGLED_ORGS[@]+"${TANGLED_ORGS[@]}"}
 }
 
 # Homebrew
+
+# __PERSONAL_BREW_PREFIXES, shared with the shell's configs/zsh/general/helpers.sh
+# shellcheck source=configs/zsh/homebrew/prefixes.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../../configs/zsh/homebrew/prefixes.sh"
 
 # Prints the prefix on stdout, or returns 1 if brew isn't installed anywhere we
 # know about. Never hardcode /opt/homebrew: that's apple silicon's prefix, and
@@ -259,12 +300,7 @@ ensure_directory_invariant() {
 resolve_brew_prefix() {
   local candidate
 
-  for candidate in \
-    "${HOMEBREW_PREFIX:-}" \
-    /opt/homebrew \
-    /usr/local \
-    /home/linuxbrew/.linuxbrew \
-    "$HOME/.linuxbrew"
+  for candidate in "${HOMEBREW_PREFIX:-}" "${__PERSONAL_BREW_PREFIXES[@]}"
   do
     if [ -n "$candidate" ] && [ -x "$candidate/bin/brew" ]
     then
@@ -295,8 +331,12 @@ load_brew() {
   log_info "using homebrew at $prefix"
   eval "$("$prefix/bin/brew" shellenv)"
 
-  # quieter, and never stop to ask a question during an unattended run
+  # quieter, and never stop to ask a question during an unattended run.
+  # NO_ASK because Homebrew 7 asks "proceed? [y/n]" before every install by
+  # default, and piped from curl there's nobody to answer - brew reads the
+  # script's own stdin, gets garbage, and aborts the install.
   export HOMEBREW_NO_ENV_HINTS=1
+  export HOMEBREW_NO_ASK=1
   return 0
 }
 
@@ -347,6 +387,48 @@ ensure_homebrew() {
   return 0
 }
 
+# Third-party taps. A formula from one of these is listed by its full name
+# (alyraffauf/tap/tg) so brew can't mistake it for something in homebrew/core.
+# alyraffauf/tap is tg, the Tangled CLI the AI agents use (configs/ai).
+BREW_TAPS="alyraffauf/tap"
+
+# usage: brew_trust_taps alyraffauf/tap
+#
+# Always returns 0, same as brew_install_batch. Homebrew 7 won't load a formula
+# from a non-official tap until the tap is trusted, so this has to run before
+# the formulae. Older brews have no `brew trust` and don't need it.
+brew_trust_taps() {
+  local tapped tap
+
+  if ! command -v brew >/dev/null 2>&1
+  then
+    record_failure "brew isn't available - skipping taps: $*"
+    return 0
+  fi
+
+  tapped="$(brew tap 2>/dev/null || true)"
+
+  for tap in "$@"
+  do
+    if ! printf '%s\n' "$tapped" | grep -Fxq "$tap"
+    then
+      log_step "brew tap $tap"
+      if ! brew tap "$tap"
+      then
+        record_failure "brew tap $tap"
+        continue
+      fi
+    fi
+
+    if brew help trust >/dev/null 2>&1 && ! brew trust --tap "$tap"
+    then
+      record_failure "brew trust --tap $tap"
+    fi
+  done
+
+  return 0
+}
+
 # usage: brew_install_batch --formula git gh starship
 #        brew_install_batch --cask 1password arc
 #
@@ -367,11 +449,18 @@ brew_install_batch() {
     return 0
   fi
 
-  installed="$(brew list "$kind" 2>/dev/null || true)"
+  # --full-name so a tap formula is listed as alyraffauf/tap/tg, the way it's
+  # asked for
+  installed="$(brew list "$kind" --full-name 2>/dev/null || true)"
 
   for pkg in "$@"
   do
-    if printf '%s\n' "$installed" | grep -Fxq "$pkg"
+    # An alias never matches by name (python3 is listed as python@3.x), so a
+    # miss is asked about directly - one extra brew call per miss. Not when
+    # nothing's installed at all, as on a fresh machine: there's nothing for
+    # an alias to resolve to, and it would be a brew call per package.
+    if printf '%s\n' "$installed" | grep -Fxq "$pkg" ||
+      { [ -n "$installed" ] && brew list "$kind" "$pkg" >/dev/null 2>&1; }
     then
       log_info "already installed ($kind): $pkg"
     else
@@ -408,57 +497,169 @@ brew_install_batch() {
   return 0
 }
 
-# Clone dotfiles
-ensure_dotfiles_repo() {
-  local parent
+# Cargo
+#
+# Crates that aren't in homebrew. `rust` comes from brew on both platforms, so
+# this has to run after the brew formulae. `cargo install` puts the binaries in
+# ~/.cargo/bin, which configs/zsh/rust/cargo.sh adds to $PATH.
+CARGO_CRATES="clauth"
 
-  log_step "making sure the dotfiles clone is at $DOTFILES_DIR"
+# usage: cargo_install_batch clauth
+#
+# Always returns 0, same as brew_install_batch. One crate at a time rather than
+# one `cargo install a b c`, so a failure is recorded against the crate that
+# actually broke.
+cargo_install_batch() {
+  local installed crate
 
-  if ! command -v git >/dev/null 2>&1
+  if ! command -v cargo >/dev/null 2>&1
   then
-    record_failure "git isn't installed - can't set up $DOTFILES_DIR"
-    return 1
-  fi
-
-  if [ -d "$DOTFILES_DIR/.git" ]
-  then
-    if [ -n "$DOTFILES_REPO_ROOT" ] && [ "$DOTFILES_REPO_ROOT" = "$DOTFILES_DIR" ]
-    then
-      log_info "this script is running from that clone - not pulling underneath itself"
-      return 0
-    fi
-
-    if [ -n "$(git -C "$DOTFILES_DIR" status --porcelain 2>/dev/null)" ]
-    then
-      log_warn "the clone has uncommitted changes - skipping the pull so nothing gets clobbered"
-      return 0
-    fi
-
-    log_info "already cloned - pulling"
-    if ! git -C "$DOTFILES_DIR" pull --ff-only
-    then
-      log_warn "git pull failed - carrying on with the clone as it is"
-    fi
+    record_failure "cargo isn't available - skipping: $*"
     return 0
   fi
 
-  if [ -e "$DOTFILES_DIR" ] || [ -L "$DOTFILES_DIR" ]
-  then
-    record_failure "$DOTFILES_DIR exists but isn't a git clone - leaving it alone; move it aside and re-run"
-    return 1
-  fi
+  # `cargo install --list` prints "<crate> v<version>:" and then one indented
+  # line per binary
+  installed="$(cargo install --list 2>/dev/null || true)"
 
-  parent="$(dirname "$DOTFILES_DIR")"
-  mkdir -p "$parent"
+  for crate in "$@"
+  do
+    if printf '%s\n' "$installed" | grep -q "^$crate v"
+    then
+      log_info "already installed (cargo): $crate"
+      continue
+    fi
 
-  log_info "cloning $DOTFILES_REPO_URL"
-  if ! git clone "$DOTFILES_REPO_URL" "$DOTFILES_DIR"
-  then
-    record_failure "git clone $DOTFILES_REPO_URL into $DOTFILES_DIR failed"
-    return 1
-  fi
+    # It compiles from source, so this is the slow bit of the run. --locked
+    # builds against the Cargo.lock the crate was published with, instead of
+    # whatever dependency versions happen to resolve today.
+    log_step "cargo install $crate"
+    if ! cargo install --locked "$crate"
+    then
+      record_failure "cargo install $crate"
+    fi
+  done
 
   return 0
+}
+
+# pnpm globals
+#
+# Packages installed with `pnpm add -g` rather than brew. `@yarnpkg/cli-dist`
+# is Yarn 4: brew only has Yarn 1, corepack is being dropped from Node.js, and
+# `npm i -g` lives inside one node version and vanishes the moment fnm/nvm/asdf
+# switches to another. pnpm's global directory doesn't belong to any node
+# version, and its shims run whichever `node` is on $PATH.
+PNPM_GLOBALS="@yarnpkg/cli-dist"
+
+# usage: pnpm_global_install_batch @yarnpkg/cli-dist
+#
+# Always returns 0, same as brew_install_batch. Has to run after the brew
+# formulae, since pnpm comes from brew.
+pnpm_global_install_batch() {
+  local installed pkg
+
+  if ! command -v pnpm >/dev/null 2>&1
+  then
+    record_failure "pnpm isn't available - skipping: $*"
+    return 0
+  fi
+
+  # `pnpm add -g` refuses to run unless its bin directory is already on $PATH,
+  # even before that directory exists. configs/zsh/pnpm/pnpm.sh does the same
+  # for every shell afterwards.
+  # shellcheck source=configs/zsh/pnpm/home.sh
+  . "$DOTFILES_DIR/configs/zsh/pnpm/home.sh"
+  PATH="$PNPM_HOME/bin:$PATH"
+
+  # --parseable prints one path per package, ending in node_modules/<name>
+  installed="$(pnpm ls -g --depth=0 --parseable 2>/dev/null || true)"
+
+  for pkg in "$@"
+  do
+    if printf '%s\n' "$installed" | grep -q "/node_modules/$pkg\$"
+    then
+      log_info "already installed (pnpm -g): $pkg"
+      continue
+    fi
+
+    log_step "pnpm add -g $pkg"
+    if ! pnpm add -g "$pkg"
+    then
+      record_failure "pnpm add -g $pkg"
+    fi
+  done
+
+  return 0
+}
+
+# Agent skills
+#
+# Skills for Claude Code and Codex, installed with the Skills CLI (skills.sh)
+# through `pnpm dlx`, so this has to run after the pnpm globals. A global
+# install keeps one copy in ~/.agents/skills, which Codex reads as is, and
+# symlinks it into ~/.claude/skills. DO_NOT_TRACK turns off the CLI's telemetry
+# and its third-party security-audit lookups.
+AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop"
+
+# usage: agent_skills_install_batch blader/humanizer
+#
+# Always returns 0, same as brew_install_batch. A source that's already
+# installed is skipped; `pnpm dlx skills update -g` is what updates them.
+agent_skills_install_batch() {
+  local installed src
+
+  if ! command -v pnpm >/dev/null 2>&1
+  then
+    record_failure "pnpm isn't available - skipping skills: $*"
+    return 0
+  fi
+
+  installed="$(DO_NOT_TRACK=1 pnpm dlx skills ls -g --json 2>/dev/null || true)"
+
+  for src in "$@"
+  do
+    if printf '%s\n' "$installed" | grep -Fq "\"source\": \"$src\""
+    then
+      log_info "already installed (skills): $src"
+      continue
+    fi
+
+    log_step "skills add $src"
+    if ! DO_NOT_TRACK=1 pnpm dlx skills add "$src" --global --agent claude-code --agent codex --yes
+    then
+      record_failure "skills add $src"
+    fi
+  done
+
+  return 0
+}
+
+# usage: install_packages "<formulae>" ["<casks>"]
+#
+# Homebrew, then everything in the order it depends on: taps before their
+# formulae, brew's rust before the crates, brew's pnpm before the pnpm globals
+# and the skills. Always returns 0, same as brew_install_batch.
+#
+# word splitting is the point here
+# shellcheck disable=SC2086
+install_packages() {
+  if ! ensure_homebrew
+  then
+    log_warn "skipping packages - homebrew isn't usable"
+    return 0
+  fi
+
+  log_step "installing packages"
+  brew_trust_taps $BREW_TAPS
+  brew_install_batch --formula $1
+  if [ -n "${2:-}" ]
+  then
+    brew_install_batch --cask $2
+  fi
+  cargo_install_batch $CARGO_CRATES
+  pnpm_global_install_batch $PNPM_GLOBALS
+  agent_skills_install_batch $AGENT_SKILLS
 }
 
 # ~/.zshrc
@@ -512,15 +713,66 @@ write_zshrc() {
 
 # git config
 
-# usage: link_dotfile .gitconfig
+# ~/.gitconfig is a small real file that [include]s the repo's .gitconfig, not
+# a symlink to it. Plenty of tools run `git config --global` - `gh auth login`
+# offering to set up a credential helper, `git lfs install`, editors - and
+# through a symlink every one of them wrote machine-specific paths into a file
+# this repo tracks. Now they write here, after the include, and the repo copy
+# stays as committed.
+write_gitconfig() {
+  local gitconfig="$HOME/.gitconfig"
+  local src="$DOTFILES_DIR/.gitconfig"
+  local include
+
+  log_step "setting up $gitconfig"
+
+  if [ ! -f "$src" ]
+  then
+    record_failure "$src doesn't exist - not writing $gitconfig"
+    return 1
+  fi
+
+  # $HOME-relative, the same as write_zshrc; git expands a leading ~/ in an
+  # include path
+  include="$src"
+  case "$include" in
+    "$HOME"/*) include="~${include#"$HOME"}" ;;
+  esac
+
+  # Idempotency, as in write_zshrc: once it includes the repo copy it's the
+  # user's file, and whatever tools have added to it stays
+  if [ -f "$gitconfig" ] && grep -Fq -e "$include" -e "$src" "$gitconfig"
+  then
+    log_info "already includes $src - leaving it as it is"
+    return 0
+  fi
+
+  backup_path "$gitconfig"
+
+  {
+    printf '# Written by the dotfiles setup script (github.com/bnb/dotfiles) on %s.\n' "$(date '+%Y-%m-%d')"
+    printf '#\n'
+    printf '# The shared settings are the repo file included below, which includes\n'
+    printf '# ~/.gitconfig.local in turn. `git config --global` writes land in this\n'
+    printf '# file, after the include, so they win and the repo copy stays clean.\n'
+    printf '\n'
+    printf '[include]\n'
+    printf '\tpath = %s\n' "$include"
+  } > "$gitconfig"
+
+  log_info "wrote $gitconfig"
+  return 0
+}
+
+# usage: link_dotfile configs/tg/config.toml ~/.config/tg/config.toml
 #
-# Symlinks a file from the repo into $HOME, backing up a real file first. The
-# symlink means editing the repo copy is editing the live config, with no
-# re-run needed.
+# Symlinks a file from the repo into $HOME (or to the given path), backing up a
+# real file first. The symlink means editing the repo copy is editing the live
+# config, with no re-run needed.
 link_dotfile() {
   local name="$1"
   local src="$DOTFILES_DIR/$name"
-  local dest="$HOME/$name"
+  local dest="${2:-$HOME/$name}"
   local current
 
   log_step "linking $dest -> $src"
@@ -543,8 +795,94 @@ link_dotfile() {
   fi
 
   backup_path "$dest"
+  mkdir -p "$(dirname "$dest")"
   ln -s "$src" "$dest"
   log_info "linked"
+  return 0
+}
+
+# 1Password
+
+# resolve_op_ssh_sign, OP_SSH_AGENT_SOCK and OP_SSH_AGENT_SOCK_MACOS, shared
+# with configs/ai/automation-accounts.sh
+# shellcheck source=setup/lib/onepassword.sh
+. "$(dirname "${BASH_SOURCE[0]}")/onepassword.sh"
+
+# ~/.ssh/config
+
+# Points ssh at 1Password's agent, so `git pull` over SSH asks 1Password (Touch
+# ID) instead of prompting for the on-disk key's passphrase. The block goes at
+# the END of ~/.ssh/config: ssh keeps the first value it sees for each option, so
+# any host above it that picks its own agent (OrbStack's include, say) still wins.
+write_ssh_config() {
+  local ssh_config="$HOME/.ssh/config"
+
+  log_step "pointing ssh at the 1Password agent"
+
+  if ! resolve_op_ssh_sign >/dev/null
+  then
+    log_info "1Password isn't installed here - leaving ssh on its default agent"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$OP_SSH_AGENT_SOCK")"
+  chmod 700 "$(dirname "$OP_SSH_AGENT_SOCK")"
+
+  if [ "$(uname -s)" = "Darwin" ]
+  then
+    if [ -L "$OP_SSH_AGENT_SOCK" ] && [ "$(readlink "$OP_SSH_AGENT_SOCK")" = "$OP_SSH_AGENT_SOCK_MACOS" ]
+    then
+      log_info "already linked: $OP_SSH_AGENT_SOCK"
+    elif [ -e "$OP_SSH_AGENT_SOCK" ] || [ -L "$OP_SSH_AGENT_SOCK" ]
+    then
+      record_failure "$OP_SSH_AGENT_SOCK exists and isn't a link to 1Password's socket - leaving it alone"
+      return 1
+    else
+      # Fine to link before the socket exists: it appears the moment the agent
+      # is turned on, and the link starts working then without a re-run.
+      log_info "linking $OP_SSH_AGENT_SOCK -> $OP_SSH_AGENT_SOCK_MACOS"
+      ln -s "$OP_SSH_AGENT_SOCK_MACOS" "$OP_SSH_AGENT_SOCK"
+    fi
+  fi
+
+  if [ ! -S "$OP_SSH_AGENT_SOCK" ]
+  then
+    log_warn "the 1Password SSH agent isn't running yet - turn it on in 1Password > Settings > Developer"
+  fi
+
+  if [ -f "$ssh_config" ] && grep -Fq '.1password/agent.sock' "$ssh_config"
+  then
+    log_info "$ssh_config already uses the 1Password agent"
+    return 0
+  fi
+
+  if [ ! -d "$HOME/.ssh" ]
+  then
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+  fi
+
+  if [ ! -f "$ssh_config" ]
+  then
+    touch "$ssh_config"
+    chmod 600 "$ssh_config"
+  fi
+
+  # don't glue the new Host line onto the end of an unterminated last line
+  if [ -s "$ssh_config" ] && [ -n "$(tail -c 1 "$ssh_config")" ]
+  then
+    printf '\n' >> "$ssh_config"
+  fi
+
+  {
+    printf '\n'
+    printf '# 1Password SSH agent - added by the dotfiles setup script (github.com/bnb/dotfiles).\n'
+    printf '# Keep this last: ssh uses the first value it finds for each option.\n'
+    printf 'Host *\n'
+    printf '  IdentityAgent ~/.1password/agent.sock\n'
+  } >> "$ssh_config"
+
+  log_info "added IdentityAgent to $ssh_config"
   return 0
 }
 
@@ -554,8 +892,7 @@ link_dotfile() {
 # run is a no-op instead of a rewrite.
 write_gitconfig_local() {
   local local_config="$HOME/.gitconfig.local"
-  local repo_config="$DOTFILES_DIR/.gitconfig"
-  local candidate signer=""
+  local signer
 
   # The SSH signing *public* key. Not secret, but it is only usable on a machine
   # holding the matching private key, so it belongs next to the rest of the
@@ -570,30 +907,10 @@ write_gitconfig_local() {
     return 1
   fi
 
-  # 1Password's SSH signer. The path differs per machine (and doesn't exist at
-  # all on most of them), which is exactly why it can't live in the committed
-  # .gitconfig: every machine without 1Password installed would fail to commit.
-  for candidate in \
-    "${OP_SSH_SIGN:-}" \
-    "/Applications/1Password.app/Contents/MacOS/op-ssh-sign" \
-    "$HOME/Applications/1Password.app/Contents/MacOS/op-ssh-sign" \
-    "/opt/1Password/op-ssh-sign" \
-    "/usr/bin/op-ssh-sign" \
-    "/usr/local/bin/op-ssh-sign"
-  do
-    if [ -n "$candidate" ] && [ -x "$candidate" ]
-    then
-      signer="$candidate"
-      break
-    fi
-  done
-
-  if [ -z "$signer" ] && command -v op-ssh-sign >/dev/null 2>&1
-  then
-    signer="$(command -v op-ssh-sign)"
-  fi
-
-  if [ -z "$signer" ]
+  # The signer's path differs per machine (and doesn't exist at all on most of
+  # them), which is exactly why it can't live in the committed .gitconfig: every
+  # machine without 1Password installed would fail to commit.
+  if ! signer="$(resolve_op_ssh_sign)"
   then
     log_info "no 1Password op-ssh-sign on this machine - leaving commit signing off"
     log_info "(install 1Password and re-run this script to turn it on)"
@@ -606,23 +923,136 @@ write_gitconfig_local() {
   git config --file "$local_config" gpg.ssh.program "$signer"
   git config --file "$local_config" commit.gpgsign true
 
-  # The committed .gitconfig is supposed to end with an [include] pointing here.
-  # If it doesn't, this file is inert
-  if [ -f "$repo_config" ] && ! grep -Fq 'gitconfig.local' "$repo_config"
-  then
-    log_warn "$repo_config has no [include] for ~/.gitconfig.local - the signing config above won't be picked up"
-  fi
+  return 0
+}
+
+# AI agents' forge accounts
+
+# Re-applies configs/ai/automation-accounts.sh for each forge on every run, so
+# the agents stay on the automation accounts even after one of them (or
+# clauth) rewrites its own config. It can't do the first login - that needs a browser
+# and a person, and this run has neither - so until `config:ai-github login` /
+# `config:ai-tangled login` has happened once, the script just says so and this
+# moves on.
+wire_ai_accounts() {
+  local forge status
+
+  for forge in github tangled
+  do
+    log_step "pointing the agents at the $forge automation account"
+
+    bash "$DOTFILES_DIR/configs/ai/automation-accounts.sh" "$forge" apply
+    status=$?
+
+    case "$status" in
+      0|2) ;; # 2 is "not logged in yet", which the script has already explained
+      *) record_failure "config:ai-$forge apply" ;;
+    esac
+  done
 
   return 0
+}
+
+# Claude Code's "Project instructions" setting (/config) in
+# ~/.claude/settings.json: read CLAUDE.md and AGENTS.md files together. By
+# default a CLAUDE.md in or above the working directory stops it reading any
+# AGENTS.md, and the work one sits above every work repo. A value already
+# picked in /config is left alone.
+claude_reads_agents_md() {
+  log_step "having Claude Code read AGENTS.md alongside CLAUDE.md"
+  PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
+    python3 - "$HOME/.claude/settings.json" <<'PY' || record_failure "couldn't update ~/.claude/settings.json"
+import sys
+from config_file import read_json, write_json
+
+path = sys.argv[1]
+settings = read_json(path)
+options = settings.setdefault("pluginConfigs", {}).setdefault("agents-md@builtin", {}).setdefault("options", {})
+if options.get("instructionFiles", "claude-md-or-agents-md") != "claude-md-or-agents-md":
+    print("already set to %s" % options["instructionFiles"])
+    sys.exit(0)
+options["instructionFiles"] = "claude-md-and-agents-md"
+write_json(path, settings)
+print("set")
+PY
+}
+
+# Links configs/ai/instructions.md in as both agents' user-level instructions.
+# Always the real ~/.claude, like automation-accounts.sh: `clauth start` copies
+# its CLAUDE.md into each profile's runtime (only --isolated leaves it out).
+link_ai_instructions() {
+  link_dotfile configs/ai/instructions.md "$HOME/.claude/CLAUDE.md" || true
+  link_dotfile configs/ai/instructions.md "${CODEX_HOME:-$HOME/.codex}/AGENTS.md" || true
+  return 0
+}
+
+# Only on a machine with my work checkouts:
+#
+# - the keys work repos push with, mine and the bot's (configs/git/*.gitconfig)
+# - configs/ai/assistant-ui.md above the checkouts as both CLAUDE.md and
+#   AGENTS.md. Claude Code reads a CLAUDE.md from every directory above the
+#   working directory. Codex stops at the repo's root, so a SessionStart hook
+#   hands it the AGENTS.md instead.
+# - Claude in VS Code on the work account
+link_work_files() {
+  [ -d "$WORK_DIR" ] || return 0
+
+  link_dotfile configs/git/assistant-ui.pub "$HOME/.ssh/assistant-ui.pub" || true
+  link_dotfile configs/git/assistant-ui-botandbang.pub "$HOME/.ssh/assistant-ui-botandbang.pub" || true
+  link_dotfile configs/ai/assistant-ui.md "$WORK_DIR/CLAUDE.md" || true
+  link_dotfile configs/ai/assistant-ui.md "$WORK_DIR/AGENTS.md" || true
+  claude_reads_agents_md || true
+  link_dotfile configs/ai/codex-hooks.json "${CODEX_HOME:-$HOME/.codex}/hooks.json" || true
+  vscode_claude_on_work_account || true
+  return 0
+}
+
+# Claude in VS Code is for work and the Claude desktop app isn't, so VS Code's
+# goes through configs/ai/vscode-claude.sh, which starts it on the work clauth
+# profile. Sets that as claudeCode.claudeProcessWrapper in each VS Code with
+# user settings, unless something else is set there already.
+vscode_claude_on_work_account() {
+  local base variant dir
+
+  for base in "$HOME/Library/Application Support" "${XDG_CONFIG_HOME:-$HOME/.config}"
+  do
+    for variant in "Code" "Code - Insiders"
+    do
+      dir="$base/$variant/User"
+      [ -d "$dir" ] || continue
+      log_step "running Claude in $variant on the work account"
+      PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
+        python3 - "$dir/settings.json" "$DOTFILES_DIR/configs/ai/vscode-claude.sh" <<'PY' || record_failure "couldn't update $dir/settings.json"
+import sys
+from config_file import read_json, write_json
+
+path, wrapper = sys.argv[1:]
+settings = read_json(path)
+current = settings.get("claudeCode.claudeProcessWrapper")
+if current == wrapper:
+    print("already set")
+    sys.exit(0)
+if current:
+    print("leaving it on %s" % current)
+    sys.exit(0)
+settings["claudeCode.claudeProcessWrapper"] = wrapper
+write_json(path, settings, indent=4)
+print("set")
+PY
+    done
+  done
 }
 
 # Shared tail end of both platforms
 
 # usage: finalize_shell_config PERSONAL_SETUP_MACOS PERSONAL_SETUP_MACOSBREW ...
 finalize_shell_config() {
-  ensure_dotfiles_repo || true
   write_zshrc "$@" || true
-  link_dotfile .gitconfig || true
-  link_dotfile .npmrc || true
+  write_gitconfig || true
+  link_dotfile configs/tg/config.toml "${XDG_CONFIG_HOME:-$HOME/.config}/tg/config.toml" || true
   write_gitconfig_local || true
+  write_ssh_config || true
+  wire_ai_accounts || true
+  link_ai_instructions || true
+  link_work_files || true
 }

@@ -1,0 +1,17 @@
+# botandbang's work identity (my GitHub automation account), for the same repos
+# as ./assistant-ui.gitconfig. GitHub won't let two accounts share an email or
+# a key, so the bot has its own of each. configs/ai/automation-accounts.sh
+# includes this from the end of the agents' GitHub fragment, under the same
+# conditions, so it only applies while the agents are on the bot.
+
+[user]
+	email = tierney+botandbang@assistant-ui.com
+	# "tierney+botandbang@assistant-ui.com - Signing" in 1Password
+	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMB/hsMF41Ysvvj+ajhcv5yzDQOzjLNyaXJFxTDZmaW9
+
+# Push with "tierney+botandbang@assistant-ui.com - Authentication" first.
+# setup.sh links its public half (./assistant-ui-botandbang.pub) into ~/.ssh.
+# The agents' ssh config, which automation-accounts.sh writes, never reads
+# ~/.ssh/config for GitHub, so the only other key on offer is the bot's own.
+[core]
+	sshCommand = ssh -F ~/.config/ai-agents/ssh_config -i ~/.ssh/assistant-ui-botandbang.pub

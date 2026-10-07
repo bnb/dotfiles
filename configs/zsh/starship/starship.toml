@@ -1,3 +1,25 @@
-# Replace the "❯" symbol in the prompt with "⚑"
-[character]                            # The name of the module we are configuring is "character"
-success_symbol = "[⚑](bold green)"     # The "success_symbol" segment is being set to "➜" with the color "bold green" The "success_symbol" segment is being set to "➜" with the color "bold green"
+# Replace the default "❯" prompt symbol with "⚑"
+[character]
+success_symbol = "[⚑](bold green)" # shown after a command that succeeded
+error_symbol = "[⚑](bold red)"     # shown after a command that failed
+
+# The default format only shows the account, so a config with just a project
+# renders a bare "on ☁️" everywhere
+[gcloud]
+format = 'on [$symbol$project]($style) '
+
+# Exit code of the last command, when it failed
+[status]
+disabled = false
+
+# Lines added/removed in the current git repo
+[git_metrics]
+disabled = false
+
+# Marker while sudo credentials are cached
+[sudo]
+disabled = false
+
+# Desktop notification when a command running 45s+ finishes
+[cmd_duration]
+show_notifications = true

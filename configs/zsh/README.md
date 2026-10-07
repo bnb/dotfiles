@@ -34,10 +34,8 @@ export PERSONAL_SETUP_MACOS=true
 
 - `PERSONAL_SETUP_MACOS`
   - if this is a macOS machine, set to `true` — adds the macOS `$PATH` entries
-- `PERSONAL_SETUP_MACOSBREW`
-  - if this is a macOS machine you want homebrew on, set to `true`
-- `PERSONAL_SETUP_LINUXBREW`
-  - if this is a linux/WSL machine you want linuxbrew on, set to `true`
+- `PERSONAL_SETUP_MACOSBREW` / `PERSONAL_SETUP_LINUXBREW`
+  - if you want homebrew on this machine, set either one to `true`. they do the same thing; `setup.sh` writes the one named for the platform
 - `PERSONAL_SETUP_NVM`
   - if you'd like to include the shell scripts that make nvm work, set to `true`
 - `PERSONAL_SETUP_FNM`
@@ -46,10 +44,6 @@ export PERSONAL_SETUP_MACOS=true
   - if you'd like to include the shell scripts that make asdf work, set to `true`
 - `PERSONAL_SETUP_STARSHIP`
   - if using starship.rs, set to `true`
-- `PERSONAL_SETUP_ZSHPLUGINS`
-  - if you want my personal plugin config, set to `true`. it's skipped with a debug note if `configs/zsh/plugins/init.sh` isn't there, which right now it isn't.
-- `PERSONAL_SETUP_WORK`
-  - if this is a work machine, set to `true`. the work aliases only load when `PERSONAL_SETUP_MACOS` is also true.
 - `PERSONAL_SETUP_DEBUG`
   - to print what's being set up as it happens, set to `true`. first thing to reach for when a shell isn't doing what you expect.
 
@@ -74,21 +68,24 @@ if the winner is enabled but isn't actually installed, you get a warning on stde
 
 ## What's in here
 
-- [.zshrc](./.zshrc): the entry point. self-locates, sources `general/`, then everything else behind its flag.
+- [.zshrc](./.zshrc): the entry point. self-locates, sources `general/`, makes `$path` drop duplicates (`typeset -U`), then sources everything else behind its flag.
 - `general/`: always loaded.
-  - [helpers.sh](./general/helpers.sh): `__personal_enabled`, `__personal_debug`, `__personal_warn`, and `__personal_brew_prefix` — which finds brew across `/opt/homebrew`, `/usr/local` and `/home/linuxbrew/.linuxbrew` and caches the answer, so nothing in here hardcodes a prefix. sourced first, because everything below uses them.
-  - [aliases.sh](./general/aliases.sh): my aliases, plus `c` — converts every wav/aif/aiff/flac under the current directory into `./mp3` at 320k.
+  - [helpers.sh](./general/helpers.sh): `__personal_enabled`, `__personal_debug`, `__personal_warn`, `__personal_brew_prefix` (finds brew in the prefixes [homebrew/prefixes.sh](./homebrew/prefixes.sh) lists, which setup.sh shares, and caches the answer), `__personal_brew_shellenv`, and `__personal_cache`, which keeps a tool's generated shell setup in `~/.cache/dotfiles/` and only re-runs the tool when its binary (or a config file the output depends on) changes path or mtime. sourced first, because everything below uses them.
+  - [aliases.sh](./general/aliases.sh): my aliases (including `g`, which opens the current directory — or one you pass — in Ghostty, and `github` / `tangled`, which cd to `$PERSONAL_GITHUB_DIR` / `$PERSONAL_TANGLED_DIR` or a path under them), plus `c` — converts every wav/aif/aiff/flac under the current directory into `./mp3` at 320k. run `aliases` to list them all, each beside the comment trailing its definition, or its command if it has none.
   - [correction.sh](./general/correction.sh): turns zsh's "did you mean" autocorrect off.
   - [language.sh](./general/language.sh): `LANG`.
-  - [sshKeyPath.sh](./general/sshKeyPath.sh): `SSH_KEY_PATH`, pointed at the first private key that's actually on the machine rather than an ed25519 path that might not exist.
   - [variables.sh](./general/variables.sh): `PERSONAL_GITHUB_DIR` and
-    `PERSONAL_TANGLED_DIR`.
-  - [config-git.sh](./general/config-git.sh), [config-jj.sh](./general/config-jj.sh), [config-npm.sh](./general/config-npm.sh): not sourced at startup — they're run on demand by the `config:git` / `config:jj` / `config:npm` aliases to stamp my name and email onto a machine.
-- `homebrew/`: [macos.sh](./homebrew/macos.sh) and [linux.sh](./homebrew/linux.sh) — `brew shellenv`, skipped with a debug note if brew isn't installed.
-- `macos/`: [pathExports.sh](./macos/pathExports.sh) — the macOS `$PATH`. `typeset -U` so re-sourcing can't stack duplicates, and directories that don't exist get dropped rather than sitting in front of ones that do.
+    `PERSONAL_TANGLED_DIR`, plus `NPM_CONFIG_GLOBALCONFIG`, which points npm at the repo's [.npmrc](../../.npmrc) as its global config (the comment there says why).
+  - [config-jj.sh](./general/config-jj.sh), [config-npm.sh](./general/config-npm.sh): not sourced at startup. they're run on demand by the `config:jj` / `config:npm` aliases: `config:jj` copies my git identity into jj, and `config:npm` copies the repo's .npmrc into `~/.npmrc` for npm started outside zsh. `config:ai-github` and `config:ai-tangled` are the same idea for the accounts Claude Code and Codex use on each forge, and `toggle:ai-github` flips Claude Code between the GitHub automation account and mine. `config:tracehub` and `toggle:tracehub` set up and flip tracehub for my work repos. those scripts live in [configs/ai](../ai/README.md).
+- `homebrew/`: [init.sh](./homebrew/init.sh), sourced when either brew flag is on: what `brew shellenv` sets up, done by `__personal_brew_shellenv` without running brew (which cost ~20ms a shell). skipped with a debug note if brew isn't installed. [prefixes.sh](./homebrew/prefixes.sh) lists where brew can live, for the shell and setup.sh both.
+- `macos/`: [pathExports.sh](./macos/pathExports.sh) sets the macOS `$PATH`. directories that don't exist get dropped rather than sitting in front of ones that do. sourced after homebrew, cargo and pnpm, so `~/.local/bin` and `~/bin` stay ahead of everything, then cargo's and pnpm's bins, then brew's directories.
+- `rust/`: [cargo.sh](./rust/cargo.sh) — puts `~/.cargo/bin` (or `$CARGO_HOME/bin`) on `$PATH`, which is where `cargo install`ed tools like `clauth` live. brew's `rust` doesn't do this the way rustup would. no flag: it's always sourced, after homebrew, and does nothing if the directory isn't there.
+- `pnpm/`: [pnpm.sh](./pnpm/pnpm.sh) exports `PNPM_HOME` (pnpm's own default, or whatever you set before it, worked out in [home.sh](./pnpm/home.sh), which setup.sh shares) and puts `$PNPM_HOME/bin` on `$PATH`, which `pnpm add -g` refuses to run without. that's also where `yarn` (Yarn 4, installed by `setup.sh` as a pnpm global) lives. it replaces the block `pnpm setup` would append to `~/.zshrc`. no flag, and it's added even before the directory exists, because pnpm checks `$PATH` before creating anything.
 - `node/`: [nvm.sh](./node/nvm.sh), [fnm.sh](./node/fnm.sh), [asdf.sh](./node/asdf.sh) — one of these, per the precedence above.
-- `starship/`: [init.sh](./starship/init.sh) and [starship.toml](./starship/starship.toml) — the prompt, and its config.
-- `work/`: [aliases.sh](./work/aliases.sh) — work-machine-only aliases, loaded only when `PERSONAL_SETUP_WORK` and `PERSONAL_SETUP_MACOS` are both on, and skipped with a debug note if the file isn't there. it's where employer-specific stuff goes so it never ends up in the general aliases. the file is public, so nothing secret lives in it.
+- `starship/`: [init.sh](./starship/init.sh) and [starship.toml](./starship/starship.toml) — the prompt, and its config. starship's init is cached in `~/.cache/dotfiles/starship-init.zsh` with `PROMPT2` baked in, so a shell runs starship zero times instead of three; it's regenerated when starship or `starship.toml` changes.
+- completions: `.zshrc` runs `compinit` itself, unless the system zshrc already has (Ubuntu's does). macOS's system zshrc doesn't, so without this a mac had no tab completion at all. the full check runs at most once a day (`compinit -C` otherwise), so delete `~/.zcompdump` to pick up a new completion straight away.
+- `clauth/`: [completions.sh](./clauth/completions.sh) — the tab completion `clauth completions install` writes to `~/.clauth/completions/clauth.zsh`. clauth also appends a line sourcing it to `~/.zshrc`; delete that line, this replaces it. no flag: it's sourced after compinit, and skipped with a debug note if the file isn't there.
+- `tg/`: [completions.sh](./tg/completions.sh) — tab completion for `tg`, the Tangled CLI. its brew formula doesn't install any, and running `tg completion zsh` on every shell would cost a fork, so it's generated into `~/.cache/dotfiles/tg-completion.zsh` once and only regenerated when the `tg` binary changes, which is to say after an upgrade. no flag: sourced right after clauth's, and skipped with a debug note if `tg` isn't installed.
 
 ## Debugging
 
@@ -97,3 +94,9 @@ PERSONAL_SETUP_DEBUG=true zsh -i -c exit
 ```
 
 prints every step as it happens, which is usually enough to spot the flag that isn't set, or the tool that isn't installed.
+
+that only works if `~/.zshrc` doesn't hardcode the flag: a plain `export PERSONAL_SETUP_DEBUG=true` (or `=false`) there runs after the environment is read and overwrites whatever you passed in, so debug ends up stuck on or off. if you want a default in `~/.zshrc`, make it one the environment can override:
+
+```sh
+export PERSONAL_SETUP_DEBUG="${PERSONAL_SETUP_DEBUG:-false}"
+```

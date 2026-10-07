@@ -1,0 +1,31 @@
+{
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: PUBLIC; github.com/assistant-ui/assistant-ui (any push here publishes)",
+      "**Internal sharing / snippet hosting**: None configured; treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: GitHub Actions secret `CLAUDE_CODE_OAUTH_TOKEN` referenced in CI; no other secrets manager configured",
+      "**Default / protected branches**: Default branch `main`; protected via rulesets; treat `main` as protected despite no classic branch-protection entry",
+      "**CI/CD deploy targets**: npm trusted publishing (OIDC) via `.github/workflows/npm-publish.yaml` in the `npm Publish` GitHub Actions environment; PyPI publishing via `.github/workflows/pypi-publish.yaml`; both scoped to assistant-ui/assistant-ui only",
+      "**Network posture**: None configured",
+      "**Host containment**: None configured; assume Claude Code runs on an ordinary developer machine with open internet",
+      "**Source control**: The assistant-ui/assistant-ui repo and its `origin` remote only (public repo); no additional orgs configured",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: npm public registry (trusted publishing/OIDC per package under packages/*, no long-lived tokens); not an internal/private registry",
+      "**Sensitive data locations & audiences**: `.env*.local` and `.env` files (gitignored) plus the numerous `*/.env.example` files across apps/examples/templates/python; example files only, but treat any populated `.env`/`.env.local` as holding credentials; share only with audiences cleared at the [named+specifics] bar",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: None configured; fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (assistant-ui monorepo: React/TS chat UI library, with Python packages under python/*)",
+      "**Trusted repo**: assistant-ui/assistant-ui (public) and its `origin` remote; public repo, so only this repo's own work belongs here; confidential/secret material is never cleared into it by virtue of being public or private",
+      "**Org-specific CLIs**: None configured",
+      "**Routine under .worktrees/ prefix**: the `treeflow` skill creates/removes git worktrees under `.worktrees/<branch-name>` in this repo as part of its normal PR flow"
+    ]
+  }
+}

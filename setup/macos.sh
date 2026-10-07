@@ -8,12 +8,10 @@ set -uo pipefail
 
 if [ -z "${DOTFILES_COMMON_SOURCED:-}" ]
 then
-  _macos_self="${BASH_SOURCE[0]}"
-  DOTFILES_REPO_ROOT="$(cd "$(dirname "$_macos_self")/.." && pwd)"
-  export DOTFILES_REPO_ROOT
-  [ -d "$DOTFILES_REPO_ROOT/.git" ] && export DOTFILES_DIR="$DOTFILES_REPO_ROOT"
-  # shellcheck source=lib/common.sh
-  . "$DOTFILES_REPO_ROOT/setup/lib/common.sh"
+  DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  export DOTFILES_DIR
+  # shellcheck source=setup/lib/common.sh
+  . "$DOTFILES_DIR/setup/lib/common.sh"
 fi
 
 # -----------------------------------------------------------------------------
@@ -32,14 +30,18 @@ clt_installed() {
 ensure_xcode_clt() {
   local waited=0
   local timeout=1800   # 30 minutes; a slow connection really can take this long
+  local developer_dir
 
   log_step "checking for the Xcode Command Line Tools"
 
   # A full Xcode install satisfies the toolchain even without the standalone
-  # CLT package, so accept either.
-  if clt_installed || [ -d "$(xcode-select -p 2>/dev/null)/usr/bin" ]
+  # CLT package, so accept either. The -n matters: with nothing installed
+  # xcode-select prints nothing, and "$(...)/usr/bin" becomes /usr/bin, which
+  # always exists.
+  developer_dir="$(xcode-select -p 2>/dev/null || true)"
+  if clt_installed || { [ -n "$developer_dir" ] && [ -d "$developer_dir/usr/bin" ]; }
   then
-    log_info "already installed ($(xcode-select -p 2>/dev/null))"
+    log_info "already installed ($developer_dir)"
     return 0
   fi
 
@@ -90,23 +92,28 @@ ensure_xcode_license() {
       ;;
   esac
 
-  if /usr/bin/xcodebuild -checkFirstLaunchStatus >/dev/null 2>&1
+  if /usr/bin/xcodebuild -license check >/dev/null 2>&1
   then
     log_info "already accepted"
-    return 0
+  else
+    log_info "not accepted yet - accepting it (needs root)"
+    if ! sudo_run /usr/bin/xcodebuild -license accept
+    then
+      record_failure "couldn't accept the Xcode licence - run: sudo xcodebuild -license accept"
+      return 1
+    fi
+    log_info "accepted"
   fi
 
-  log_info "not accepted yet - accepting it (needs root)"
-  if ! sudo_run /usr/bin/xcodebuild -license accept
+  # Checked separately from the licence: a new Xcode can have it accepted and
+  # still have first-launch work outstanding. That work installs the bundled
+  # packages brew's builds expect.
+  if ! /usr/bin/xcodebuild -checkFirstLaunchStatus >/dev/null 2>&1
   then
-    record_failure "couldn't accept the Xcode licence - run: sudo xcodebuild -license accept"
-    return 1
+    log_info "running Xcode's first-launch tasks"
+    sudo_run /usr/bin/xcodebuild -runFirstLaunch >/dev/null 2>&1 || true
   fi
 
-  # first launch also installs the bundled packages brew's builds expect
-  sudo_run /usr/bin/xcodebuild -runFirstLaunch >/dev/null 2>&1 || true
-
-  log_info "accepted"
   return 0
 }
 
@@ -145,13 +152,92 @@ run_software_update() {
 }
 
 # -----------------------------------------------------------------------------
-# Packages
+# clauth daemon
 #
-# --formula and --cask are passed explicitly rather than letting brew guess.
-# Guessing is how `brew install docker` quietly installed the docker CLI
-# formula instead of Docker Desktop for years.
+# Only on a machine with my work checkouts. Claude in VS Code starts each
+# session with `clauth start work` (configs/ai/vscode-claude.sh), and on macOS
+# every one of those gets its own Keychain copy of the login, so the first to
+# refresh would sign the rest out. `clauth rolling-token work` hands sessions
+# an access token with no refresh token instead, and this daemon is what keeps
+# re-stamping it. A launchd agent keeps it running and restarts it if it
+# crashes.
 # -----------------------------------------------------------------------------
-MACOS_FORMULAE="git gh nvm fnm asdf starship python3 bash shellcheck"
+CLAUTH_DAEMON_LABEL="im.bnb.clauth-daemon"
+
+run_clauth_daemon() {
+  local clauth="${CARGO_HOME:-$HOME/.cargo}/bin/clauth"
+  local plist="$HOME/Library/LaunchAgents/$CLAUTH_DAEMON_LABEL.plist"
+  local domain brew_prefix contents
+
+  [ -d "$WORK_DIR" ] || return 0
+  log_step "keeping the clauth daemon running"
+
+  if [ ! -x "$clauth" ]
+  then
+    log_info "clauth isn't installed - skipping"
+    return 0
+  fi
+
+  domain="gui/$(id -u)"
+  # its delegate jobs run `claude`, which brew installs
+  brew_prefix="$(resolve_brew_prefix || true)"
+  contents="$(cat <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$CLAUTH_DAEMON_LABEL</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$clauth</string>
+    <string>daemon</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>$(dirname "$clauth")${brew_prefix:+:$brew_prefix/bin}:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>StandardErrorPath</key>
+  <string>$HOME/.clauth/daemon.log</string>
+</dict>
+</plist>
+EOF
+)"
+
+  if [ "$(cat "$plist" 2>/dev/null)" = "$contents" ] && launchctl print "$domain/$CLAUTH_DAEMON_LABEL" >/dev/null 2>&1
+  then
+    log_info "already running under launchd"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$plist")"
+  printf '%s\n' "$contents" > "$plist"
+  launchctl bootout "$domain/$CLAUTH_DAEMON_LABEL" >/dev/null 2>&1 || true
+  if ! launchctl bootstrap "$domain" "$plist"
+  then
+    record_failure "couldn't start the clauth daemon - try: launchctl bootstrap $domain $plist"
+    return 1
+  fi
+  log_info "started ($plist)"
+}
+
+# -----------------------------------------------------------------------------
+# Packages
+# -----------------------------------------------------------------------------
+
+# One node version manager: asdf, the one PERSONAL_SETUP_ASDF below loads.
+# git-lfs because the committed .gitconfig sets the lfs filter as required, and
+# a required filter with no binary behind it fails every checkout of an LFS repo.
+# ripgrep and fd because configs/ai/instructions.md tells agents to use them.
+MACOS_FORMULAE="git git-lfs gh opencode asdf pnpm starship python3 bash shellcheck rust ripgrep fd alyraffauf/tap/tg"
 
 # Verified against the Homebrew API. Three of these used to be wrong:
 #   google-chrome-canary        -> 404, it is google-chrome@canary
@@ -160,16 +246,6 @@ MACOS_FORMULAE="git gh nvm fnm asdf starship python3 bash shellcheck"
 # The first two 404'd silently for who knows how long because the old script
 # had no `set -e` and never checked an exit status.
 MACOS_CASKS="1password alfred appcleaner arc discord docker-desktop karabiner-elements slack spotify zoom google-chrome@canary visual-studio-code@insiders font-cascadia-code font-cascadia-code-pl font-cascadia-mono font-cascadia-mono-pl"
-
-install_macos_packages() {
-  log_step "installing packages"
-
-  # word splitting is the point here
-  # shellcheck disable=SC2086
-  brew_install_batch --formula $MACOS_FORMULAE
-  # shellcheck disable=SC2086
-  brew_install_batch --cask $MACOS_CASKS
-}
 
 # -----------------------------------------------------------------------------
 main_macos() {
@@ -182,18 +258,15 @@ main_macos() {
   apply_macos_defaults
   run_software_update
 
-  if ensure_homebrew
-  then
-    install_macos_packages
-  else
-    log_warn "skipping packages - homebrew isn't usable"
-  fi
+  install_packages "$MACOS_FORMULAE" "$MACOS_CASKS"
 
   finalize_shell_config \
     PERSONAL_SETUP_MACOS \
     PERSONAL_SETUP_MACOSBREW \
     PERSONAL_SETUP_ASDF \
     PERSONAL_SETUP_STARSHIP
+
+  run_clauth_daemon || true
 }
 
 main_macos

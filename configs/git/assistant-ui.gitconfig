@@ -1,0 +1,18 @@
+# My work identity, for every repo under ~/GitHub/assistant-ui or with a remote
+# in the assistant-ui org. The repo's .gitconfig includes this after
+# ~/.gitconfig.local, so it beats the personal signing key set there. When the
+# agents are on the GitHub automation account, they get the bot's work identity
+# instead (./assistant-ui-botandbang.gitconfig).
+
+[user]
+	email = tierney@assistant-ui.com
+	# "tierney@assistant-ui.com - Signing" in 1Password. Only used where
+	# ~/.gitconfig.local turns signing on, which is wherever 1Password is.
+	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPAaAp2cKtulfHEGEonrmNfoVB9Q+Yk1CKOyxeaAemiO
+
+# Push with "tierney@assistant-ui.com - Authentication" and nothing else, so
+# GitHub never gets offered a personal key first. setup.sh links its public
+# half (./assistant-ui.pub) into ~/.ssh, and the 1Password agent answers with
+# the private key that matches.
+[core]
+	sshCommand = ssh -o IdentitiesOnly=yes -i ~/.ssh/assistant-ui.pub

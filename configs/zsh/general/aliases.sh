@@ -14,16 +14,94 @@ __personal_ff() {
   git fetch upstream && git checkout "$__personal_ff_branch" && git merge "upstream/$__personal_ff_branch"
 }
 
+# point a nodejs/node checkout at my fork (origin) and nodejs/node (upstream).
+# upstream gets added on a fresh clone and corrected on one that already has it
+__personal_node_remotes() {
+  git remote set-url origin git@github.com:bnb/node.git || return 1
+
+  if git remote get-url upstream > /dev/null 2>&1
+  then
+    git remote set-url upstream git@github.com:nodejs/node.git
+  else
+    git remote add upstream git@github.com:nodejs/node.git
+  fi || return 1
+
+  git remote -v
+}
+
+# scaffold the files a new project needs that no init command makes. The code
+# of conduct's contact is this repo's git email. The packages are pinned, so
+# this never runs whatever was last published under those names, and
+# package-lock=false is added to an existing .npmrc rather than replacing it
+__personal_init_project() {
+  local __personal_init_project_email
+
+  if ! __personal_init_project_email="$(git config user.email)"
+  then
+    print -u2 "i: git has no user.email for the code of conduct"
+    return 1
+  fi
+
+  npx covgen@3.2.1 "$__personal_init_project_email" &&
+    npx license@1.0.3 mit &&
+    npx gitignore@0.7.0 node || return 1
+
+  if ! grep -qx 'package-lock=false' .npmrc 2> /dev/null
+  then
+    # don't glue it onto the end of an unterminated last line
+    if [ -s .npmrc ] && [ -n "$(tail -c 1 .npmrc)" ]
+    then
+      print >> .npmrc
+    fi
+    print 'package-lock=false' >> .npmrc
+  fi
+}
+
+# list every alias this shell has, beside what it does: the comment trailing
+# its definition in this file if it has one, the command it runs if not. Read
+# from the live alias table rather than this file, so ones set anywhere else
+# show up too. run-help and which-command are zsh's own defaults, not mine
+__personal_aliases() {
+  setopt local_options extended_glob
+  local line name
+  local -i width=0
+  local -A notes
+
+  while IFS= read -r line
+  do
+    [[ "$line" == (#b)[[:space:]]#alias\ ([^=]##)=*\ \#\ (*) ]] && notes[$match[1]]="$match[2]"
+  done < "$PERSONAL_DOTFILES_PATH/configs/zsh/general/aliases.sh"
+
+  local -a names=(${(ko)aliases:#(run-help|which-command)})
+  for name in $names
+  do
+    (( $#name > width )) && width=$#name
+  done
+
+  for name in $names
+  do
+    printf '%-*s  %s\n' $width "$name" "${notes[$name]:-$aliases[$name]}"
+  done
+}
+
 # helpful commands
+alias aliases="__personal_aliases" # list my aliases and what each one does
 alias ff:main="__personal_ff main"
 alias ff:master="__personal_ff master"
 alias update:dotfiles='git -C "$PERSONAL_DOTFILES_PATH" pull'
 alias update:brew="brew update --force --quiet"
 
-alias config:git='source "$PERSONAL_DOTFILES_PATH/configs/zsh/general/config-git.sh"'
 alias config:jj='source "$PERSONAL_DOTFILES_PATH/configs/zsh/general/config-jj.sh"'
 alias config:npm='source "$PERSONAL_DOTFILES_PATH/configs/zsh/general/config-npm.sh"'
-alias node:remotes="git remote get-url origin && git remote set-url origin git@github.com:bnb/node.git && git remote get-url origin && git remote get-url upstream && git remote add upstream git@github.com:nodejs/node.git && git remote get-url upstream"
+# run, not sourced like the two above: it's a bash script with subcommands
+alias config:ai-github='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" github'
+alias config:ai-tangled='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" tangled'
+# flips Claude Code between the GitHub automation account and mine
+alias toggle:ai-github='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" github toggle'
+# tracehub for my work checkouts under ~/GitHub/assistant-ui, nowhere else
+alias config:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh"'
+alias toggle:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh" toggle'
+alias node:remotes="__personal_node_remotes"
 # single-quoted on purpose: $(brew --prefix) runs when redis:start is invoked,
 # not when this file is sourced, so it costs nothing at shell startup
 alias redis:start='redis-server "$(brew --prefix)/etc/redis.conf"'
@@ -48,7 +126,7 @@ __personal_edit() {
     code "$__personal_edit_flag" "$@"
   elif [ -n "$EDITOR" ]
   then
-    # -r/-a mean nothing outside VS Code so they're dropped, and ${=EDITOR}
+    # -r/-a/-n mean nothing outside VS Code so they're dropped, and ${=EDITOR}
     # word-splits so an $EDITOR that carries flags ("code -w") still works
     ${=EDITOR} "$@"
   else
@@ -57,22 +135,82 @@ __personal_edit() {
   fi
 }
 
-# short aliases aliases
+# open a directory (the current one by default) in Ghostty.
+#
+# on macOS this goes through `open -a` rather than the ghostty binary: launching
+# that directly starts a second, separate Ghostty app, while `open` hands the
+# directory to the one already running, which opens it per
+# macos-dock-drop-behavior (a new tab, unless that's been changed)
+__personal_ghostty() {
+  local __personal_ghostty_dir="${1:-$PWD}"
+
+  if [ ! -d "$__personal_ghostty_dir" ]
+  then
+    print -u2 "g: $__personal_ghostty_dir isn't a directory"
+    return 1
+  fi
+
+  # :A makes it absolute, so a relative path still means the same place to a
+  # process that doesn't share this shell's working directory
+  __personal_ghostty_dir="${__personal_ghostty_dir:A}"
+
+  if [[ "$OSTYPE" == darwin* ]]
+  then
+    open -a Ghostty "$__personal_ghostty_dir"
+  elif (( $+commands[ghostty] ))
+  then
+    # &! backgrounds and disowns, so the new window doesn't hold this shell
+    # hostage or die with it
+    ghostty --working-directory="$__personal_ghostty_dir" > /dev/null 2>&1 &!
+  else
+    print -u2 "g: ghostty isn't installed"
+    return 1
+  fi
+}
+
+# cd into one of the two trees setup.sh guarantees, or somewhere under it
+# (`github bnb/dotfiles`). A function behind the alias rather than a bare
+# `cd` alias: with an argument that would be `cd <root> <arg>`, which zsh reads
+# as its two-argument "replace this in $PWD" form.
+__personal_cd_tree() {
+  local __personal_cd_tree_dir="$1${2:+/$2}"
+
+  if [ ! -d "$1" ]
+  then
+    print -u2 "$1 doesn't exist - run setup.sh, which creates it"
+    return 1
+  fi
+
+  cd "$__personal_cd_tree_dir"
+}
+
+# single-quoted so the variables are read when the alias runs: variables.sh is
+# sourced after this file, and a machine can point them somewhere else
+alias github='__personal_cd_tree "$PERSONAL_GITHUB_DIR"' # cd to ~/GitHub, or a path under it
+alias tangled='__personal_cd_tree "$PERSONAL_TANGLED_DIR"' # cd to ~/tangled, or a path under it
+
+# short aliases
+#
+# r deliberately replaces zsh's builtin `r` (re-run the last command); that's
+# still there as `fc -e -`.
 alias r="__personal_edit -r" # open the passed path in the current VS Code Insiders window, replacing the current contents
 alias a="__personal_edit -a" # open the passed path in the current VS Code Insiders workspace
-alias i="npx covgen hello@bnb.im && npx license mit && npx gitignore node &&  echo \"package-lock=false\" > .npmrc" # init new project files that can't be init'd by an init command
+alias o="__personal_edit -n" # open the passed path in a new VS Code Insiders window
+alias g="__personal_ghostty" # open the passed directory (or the current one) in Ghostty
+alias i="__personal_init_project" # init new project files that can't be init'd by an init command
 alias u="update:dotfiles && update:brew"
 
 # --color=auto is GNU syntax. Current macOS ls takes it, but the older BSD ls
 # bails with "illegal option", which made every shell on those machines print
-# an error the first time anything ran ls. Probe once here rather than wrapping
-# ls in a function that re-checks on every single invocation.
-if command ls --color=auto /dev/null > /dev/null 2>&1
-then
-  alias ls="ls --color=auto"
-else
-  alias ls="ls -G" # BSD's spelling of the same thing
-fi
+# an error the first time anything ran ls. -G is the BSD spelling every BSD ls
+# understands (GNU reads it as --no-group, so it can't be used everywhere).
+# Decided by $OSTYPE rather than by test-running ls, which cost a fork on every
+# shell; this runs before brew is on $PATH either way, so it's always the
+# system ls being matched.
+case "$OSTYPE" in
+  darwin*|*bsd*) alias ls="ls -G" ;;
+  *)             alias ls="ls --color=auto" ;;
+esac
 
 # convert every .wav/.aif/.aiff/.flac under this directory to a 320k .mp3,
 # collecting them all into ./mp3
