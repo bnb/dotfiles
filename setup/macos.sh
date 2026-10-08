@@ -267,6 +267,9 @@ main_macos() {
     PERSONAL_SETUP_STARSHIP
 
   run_clauth_daemon || true
+
+  # shellcheck source=setup/television.sh
+  . "$DOTFILES_DIR/setup/television.sh"
 }
 
 main_macos

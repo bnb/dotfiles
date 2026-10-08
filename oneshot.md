@@ -18,6 +18,7 @@ me. It's all idempotent, so re-running it on a machine that's already set up is 
 - points the AI agents at my automation accounts instead of mine, once each has been logged in by hand (steps 5 and 6 below): Claude Code outside work sessions at GitHub's, and Claude Code and Codex at @bot.bnb.im on Tangled. it re-applies on every run, in case an agent or clauth has rewritten its config. details in [configs/ai](./configs/ai/README.md)
 - links [configs/ai/instructions.md](./configs/ai/instructions.md) in as Claude Code's and Codex's user instructions, and on a machine with `~/GitHub/assistant-ui`, the work instructions above those checkouts
 - on a machine with `~/GitHub/assistant-ui`, starts Claude in VS Code on the work clauth profile, so it doesn't share an account with the Claude desktop app, and on macOS keeps `clauth daemon` running under launchd. details in [configs/ai](./configs/ai/README.md#claude-accounts)
+- sets up [Television](https://television.run), the display my agents put things on: `tv` as a pnpm global, its skills for both agents, and its server as a login service (launchd or systemd). details [below](#television-both-platforms)
 
 anything it's about to replace gets copied to `<file>.backup.<timestamp>` first.
 
@@ -62,6 +63,12 @@ two things to know about it:
 
 `AGENT_SKILLS` in [setup/lib/common.sh](./setup/lib/common.sh), installed for Claude Code and Codex with the Skills CLI. what each one does, and how to update them: [configs/ai](./configs/ai/README.md#skills).
 
+### Television (both platforms)
+
+[setup/television.sh](./setup/television.sh), which also runs on its own (`./setup/television.sh`) to set up or repair just Television. it follows [television.run's install guide](https://television.run/install.md): `@telepath-computer/television` from pnpm, `tv skills install ~/.agents/skills` with the same symlinks into `~/.claude/skills` the Skills CLI makes, then `tv serve --persist`.
+
+the service keeps the `PATH` it was installed with, and fnm's per-shell entry on `$PATH` is gone once that shell closes. so the service gets fnm's `default` alias or asdf's shims instead, whichever has node 22.12 or later, and setup records a failure if neither does. it only restarts the service when it isn't already healthy on the installed version, and it reinstalls the skills every run since they change with each release. upgrading is `pnpm update -g @telepath-computer/television`, then `./setup/television.sh`.
+
 ## what I still have to do by hand
 
 Roughly in the order I do it:
@@ -79,7 +86,8 @@ Roughly in the order I do it:
 11. **Docker Desktop** — has to be opened once to finish its own install and grant its privileged helper.
 12. **Karabiner-Elements** — needs input-monitoring permission in System Settings, then its own config imported.
 13. **macOS system settings** — the trackpad/keyboard/dock tweaks I redo from memory every time. `setup.sh` only handles the one I keep forgetting (`DSDontWriteNetworkStores`, which stops `.DS_Store` files appearing on network shares).
-14. **[the Stream Deck profile](./configs/streamdeck)** — import it from the Stream Deck app; there's no CLI for it.
+14. **Television's desktop app**: download it from [dl.todesktop.com](https://dl.todesktop.com/260923p52umxx/mac/dmg/arm64) (Apple Silicon only), then paste the link `tv links` prints into its connect screen. it updates itself after that.
+15. **[the Stream Deck profile](./configs/streamdeck)** — import it from the Stream Deck app; there's no CLI for it.
 
 ## upgrading an old WSL box
 

@@ -32,6 +32,8 @@ setup.sh installs these for both agents with the [Skills CLI](https://skills.sh)
 - [humanizer](https://github.com/blader/humanizer) rewrites text that reads as AI-written. my instructions ask for a pass on docs, comments, PR bodies, and commit messages.
 - [install-anti-slop](https://github.com/dmmulroy/anti-slop) vendors dmmulroy's anti-slop Oxlint rules into a repo, or updates a copy that's already there.
 
+[setup/television.sh](../../setup/television.sh) puts Television's own skills (`television` and `tv-*`) in the same places with `tv skills install`, and reinstalls them on every run.
+
 a global install keeps one copy of each in `~/.agents/skills`, which Codex reads directly, and symlinks it into `~/.claude/skills`. setup skips a skill that's already installed, so updating is a separate step:
 
 ```sh

@@ -130,6 +130,9 @@ main_linux() {
     PERSONAL_SETUP_STARSHIP
 
   ensure_zsh_login_shell || true
+
+  # shellcheck source=setup/television.sh
+  . "$DOTFILES_DIR/setup/television.sh"
 }
 
 main_linux

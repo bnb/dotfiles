@@ -72,5 +72,5 @@ one gotcha worth writing down, because I've been caught by it: `git config --glo
   * [./configs/git](./configs/git): the work git identities for the assistant-ui org's repos, mine and the GitHub bot's.
   * [.npmrc](./.npmrc): my basic .npmrc, which zsh reads as npm's global config (`$NPM_CONFIG_GLOBALCONFIG`).
   * [oneshot.md](./oneshot.md): what gets installed, and what has to be done by hand.
-  * [./setup](./setup): the per-platform halves of `setup.sh` and the library they share, plus the WSL distro-upgrade scripts.
+  * [./setup](./setup): the per-platform halves of `setup.sh` and the library they share, [Television's setup](./setup/television.sh), and the WSL distro-upgrade scripts.
   * [./configs/streamdeck](./configs/streamdeck): my Stream Deck profile.
