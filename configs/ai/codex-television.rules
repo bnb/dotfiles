@@ -1,0 +1,24 @@
+# Television's everyday commands, run outside Codex's sandbox without asking.
+# They talk to the server on localhost, which the sandbox blocks. Deleting,
+# removing a channel, and administration (serve, stop, config, telemetry,
+# skills) still ask. setup/television.sh links this into ~/.codex/rules.
+prefix_rule(
+    pattern = ["tv", [
+        "help", "status", "links", "themes-path", "focus-status",
+        "list-channels", "get-channel", "create-channel", "update-channel", "focus-channel",
+        "list-artifacts", "get-artifact", "create-path-artifact", "create-url-artifact",
+        "update-artifact", "focus-artifact", "set-theme",
+    ]],
+    decision = "allow",
+    justification = "Television's everyday commands only reach its server on localhost",
+    match = [
+        "tv status",
+        "tv create-path-artifact --channel abc --title Notes --path /tmp/notes.html --no-focus",
+    ],
+    not_match = [
+        "tv serve --persist",
+        "tv delete-artifact --id abc",
+        "tv remove-channel --id abc",
+        "tv config set listen 0.0.0.0",
+    ],
+)

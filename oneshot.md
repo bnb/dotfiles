@@ -67,7 +67,7 @@ two things to know about it:
 
 [setup/television.sh](./setup/television.sh), which also runs on its own (`./setup/television.sh`) to set up or repair just Television. it follows [television.run's install guide](https://television.run/install.md): `@telepath-computer/television` from pnpm, `tv skills install ~/.agents/skills` with the same symlinks into `~/.claude/skills` the Skills CLI makes, then `tv serve --persist`.
 
-the service keeps the `PATH` it was installed with, and fnm's per-shell entry on `$PATH` is gone once that shell closes. so the service gets fnm's `default` alias or asdf's shims instead, whichever has node 22.12 or later, and setup records a failure if neither does. it only restarts the service when it isn't already healthy on the installed version, and it reinstalls the skills every run since they change with each release. upgrading is `pnpm update -g @telepath-computer/television`, then `./setup/television.sh`.
+the service keeps the `PATH` it was installed with, and fnm's per-shell entry on `$PATH` is gone once that shell closes. so the service gets fnm's `default` alias or asdf's shims instead, whichever has node 22.12 or later, and setup records a failure if neither does. it only restarts the service when it isn't already healthy on the installed version, and it reinstalls the skills every run since they change with each release. upgrading is `pnpm update -g @telepath-computer/television`, then `./setup/television.sh`. it also opens Codex's sandbox just enough for Television, see [configs/ai](./configs/ai/README.md#skills).
 
 ## what I still have to do by hand
 
