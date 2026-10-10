@@ -101,7 +101,7 @@ PY
 }
 
 setup_television() {
-  local node_dir service_path tv status home installed running skill link
+  local node_dir service_path tv status home installed running skill
 
   log_step "setting up Television"
 
@@ -129,17 +129,10 @@ setup_television() {
   then
     record_failure "tv skills install"
   fi
-  mkdir -p "$HOME/.claude/skills"
   for skill in "$HOME/.agents/skills/television" "$HOME/.agents/skills"/tv-*
   do
     [ -d "$skill" ] || continue
-    link="$HOME/.claude/skills/$(basename "$skill")"
-    if [ -e "$link" ] && [ ! -L "$link" ]
-    then
-      log_warn "$link isn't a symlink - leaving it alone"
-      continue
-    fi
-    ln -sfn "../../.agents/skills/$(basename "$skill")" "$link"
+    link_claude_skill "$(basename "$skill")"
   done
 
   status="$("$tv" status 2>/dev/null || true)"

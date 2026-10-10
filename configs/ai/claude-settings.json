@@ -1,0 +1,17 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "includeGitInstructions": false,
+  "permissions": {
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git worktree add *)"
+    ],
+    "deny": [
+      "Bash(git commit *--no-verify*)",
+      "Agent(isolation:worktree)"
+    ]
+  }
+}

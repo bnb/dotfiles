@@ -986,6 +986,82 @@ link_ai_instructions() {
   return 0
 }
 
+# usage: link_claude_skill television
+#
+# Gives Claude Code the same relative symlink into ~/.agents/skills (which
+# Codex reads as is) that the Skills CLI makes. A real directory already there
+# is left alone.
+link_claude_skill() {
+  local link="$HOME/.claude/skills/$1"
+
+  mkdir -p "$HOME/.claude/skills"
+  if [ -e "$link" ] && [ ! -L "$link" ]
+  then
+    log_warn "$link isn't a symlink - leaving it alone"
+    return 0
+  fi
+  ln -sfn "../../.agents/skills/$1" "$link"
+}
+
+# My own skills in configs/ai/skills: the rules from instructions.md that only
+# matter in some projects, so they load when needed instead of every session.
+link_ai_skills() {
+  local skill name
+
+  for skill in "$DOTFILES_DIR"/configs/ai/skills/*/
+  do
+    name="$(basename "$skill")"
+    link_dotfile "configs/ai/skills/$name/SKILL.md" "$HOME/.agents/skills/$name/SKILL.md" || continue
+    link_claude_skill "$name"
+  done
+  return 0
+}
+
+# Settings that enforce rules instructions.md can only ask for: no attribution
+# lines, none of Claude Code's own git instructions, and pushes and new
+# worktrees asking first (configs/ai/claude-settings.json, and
+# configs/ai/codex-git.rules for Codex). Added to ~/.claude/settings.json:
+# lists gain the missing entries, and a key already set to something else is
+# left alone. clauth copies these keys into work sessions too.
+enforce_ai_rules() {
+  log_step "adding my guardrails to Claude Code's settings"
+  PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
+    python3 - "$HOME/.claude/settings.json" "$DOTFILES_DIR/configs/ai/claude-settings.json" <<'PY' || record_failure "couldn't update ~/.claude/settings.json"
+import json
+import sys
+from config_file import read_json, write_json
+
+path, ours = sys.argv[1:]
+settings = read_json(path)
+
+
+def merge(current, wanted):
+    changed = False
+    for key, value in wanted.items():
+        if key not in current:
+            current[key] = value
+            changed = True
+        elif isinstance(value, dict) and isinstance(current[key], dict):
+            changed = merge(current[key], value) or changed
+        elif isinstance(value, list) and isinstance(current[key], list):
+            missing = [item for item in value if item not in current[key]]
+            current[key].extend(missing)
+            changed = changed or bool(missing)
+        elif current[key] != value:
+            print("leaving %s as %s" % (key, json.dumps(current[key])))
+    return changed
+
+
+if merge(settings, read_json(ours)):
+    write_json(path, settings)
+    print("updated")
+else:
+    print("already set")
+PY
+  link_dotfile configs/ai/codex-git.rules "${CODEX_HOME:-$HOME/.codex}/rules/git.rules" || true
+  return 0
+}
+
 # Only on a machine with my work checkouts:
 #
 # - the keys work repos push with, mine and the bot's (configs/git/*.gitconfig)
@@ -1054,5 +1130,7 @@ finalize_shell_config() {
   write_ssh_config || true
   wire_ai_accounts || true
   link_ai_instructions || true
+  link_ai_skills || true
+  enforce_ai_rules || true
   link_work_files || true
 }

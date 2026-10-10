@@ -6,6 +6,10 @@ config for the AI coding agents I use, Claude Code and Codex.
 
 [instructions.md](./instructions.md) is the set of standing instructions I kept repeating to agents, pulled from my Claude Code history. setup.sh symlinks it to `~/.claude/CLAUDE.md` for Claude Code and `~/.codex/AGENTS.md` (or `$CODEX_HOME/AGENTS.md`) for Codex, so editing the repo copy changes what both agents load. restart running sessions to pick up changes.
 
+### guardrails
+
+some rules hold only if a setting backs them, since both agents treat instruction files as context. setup.sh adds [claude-settings.json](./claude-settings.json) to `~/.claude/settings.json`: no attribution trailers or PR footers, none of Claude Code's built-in git instructions (they also drop the git status snapshot at session start), every `git push` and `git worktree add` asking first, and `--no-verify` commits and worktree-isolated subagents denied. lists gain the missing entries, and a key already set to something else is left alone. for Codex it links [codex-git.rules](./codex-git.rules) into `~/.codex/rules`, which makes `git push` and `git worktree add` prompt. both match command text, so forms like `git -C . push` slip past.
+
 ### work repos
 
 [assistant-ui.md](./assistant-ui.md) is extra instructions for my work repos. on a machine that has `~/GitHub/assistant-ui`, setup.sh links it there as both `CLAUDE.md` and `AGENTS.md`. neither agent reads an `AGENTS.md` above a repo's root on its own, so each gets a nudge:
@@ -31,6 +35,11 @@ setup.sh installs these for both agents with the [Skills CLI](https://skills.sh)
 
 - [humanizer](https://github.com/blader/humanizer) rewrites text that reads as AI-written. my instructions ask for a pass on docs, comments, PR bodies, and commit messages.
 - [install-anti-slop](https://github.com/dmmulroy/anti-slop) vendors dmmulroy's anti-slop Oxlint rules into a repo, or updates a copy that's already there.
+
+my own skills live in [skills/](./skills): rules from my instructions that only matter in some projects, so they load when needed instead of in every session. setup.sh links each `SKILL.md` into `~/.agents/skills` and the folder into `~/.claude/skills`.
+
+- [atproto](./skills/atproto/SKILL.md): conventions for AT Protocol apps.
+- [new-project](./skills/new-project/SKILL.md): my default stack for a new project.
 
 [setup/television.sh](../../setup/television.sh) puts Television's own skills (`television` and `tv-*`) in the same places with `tv skills install`, and reinstalls them on every run. every Claude Code session gets them: `clauth start` runtimes link `skills` back to `~/.claude/skills` (only `--isolated` leaves them out). Codex's sandbox would block `tv` reaching its server on localhost and writing to `~/.television/artifacts`, so setup also links [codex-television.rules](./codex-television.rules) into `~/.codex/rules`, which runs the everyday `tv` commands outside the sandbox (deleting, removing channels and admin commands still ask), and sets Codex's `default_permissions` to a `television` profile: its own `:workspace` plus write access to that one directory. if `config.toml` already sets `default_permissions` or `sandbox_mode`, setup leaves it alone and prints the lines to add.
 
