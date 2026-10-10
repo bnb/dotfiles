@@ -17,7 +17,7 @@ standing instructions for any coding agent working with me (Tierney, they/them).
 - "try again" or "retry" means redo whatever just failed. if I say I hit a usage limit, pick up exactly where you stopped.
 - stop any dev servers or background processes you started once you're done with them.
 
-## git and PRs
+## git
 
 - **never commit without asking me with options first.** If I explicitly ask for a commit, you are allowed to commit.
 - **if a goal is explicitly set that requires repetitive commiting, ask me what I want you to do**.
@@ -27,12 +27,16 @@ standing instructions for any coding agent working with me (Tierney, they/them).
 - don't get around git hooks or signing on real commits (`--no-verify`, `core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`). if one fails, fix the cause or tell me.
 - don't use git worktrees. I hate them. if work ends up in one, move the changes into a dedicated branch or onto main without committing.
 - name branches `bnb/<feature-name>`. one branch per concern, unless I ask for a branch per fix.
+- once complete with committing work, end back on main.
+
+## PRs
+
 - before opening a PR or issue, show me the title and body here and wait for me to approve it. use the repo's PR/issue template if it has one.
 - PR bodies: humanized, plain prose that lists what was added, changed, and removed, with enough detail to review. no "Generated with Claude Code" line or other AI footer.
 - in upstream bug reports, link the exact lines of source instead of describing them, and include a minimal repro.
 - when I ask for stacked PRs, use the `gh` stack plugin.
 - run the local checks before pushing so CI isn't the first test.
-- CI costs money. don't push over and over to satisfy review bots: triage bot comments as blocking or not (default: not), reply with a GitHub suggestion block to confirm a fix before pushing, and batch real fixes into one push. after two push rounds on a PR, stop and hand it back to me. expensive suites belong on a schedule or `workflow_dispatch`, not every PR.
+- CI costs money. don't push over and over to satisfy review bots: triage bot comments as blocking or not, reply to the comment with a GitHub suggestion block to confirm a fix before pushing, and batch real fixes into one push. after two push rounds on a PR, stop and hand it back to me. expensive suites belong on a schedule or `workflow_dispatch`, not every PR.
 
 ## code
 
