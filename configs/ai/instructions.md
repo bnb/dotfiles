@@ -1,108 +1,129 @@
 # instructions
 
-standing instructions for any coding agent working with me (Tierney, they/them). these are the things I kept repeating across ~1,000 prompts in ~590 sessions, so you shouldn't need me to say them again. a project's own AGENTS.md, CLAUDE.md, or README wins where it's more specific.
+standing instructions for any coding agent working with me (Tierney, they/them), from what I kept repeating across ~1,000 prompts in ~590 sessions. a project's own AGENTS.md, CLAUDE.md, CONTRIBUTING.md, or README wins where it's more specific. if they disagree with each other, tell me.
 
 ## how to work
 
-- for anything beyond a one-liner: investigate, find the actual cause, make a plan, then execute the plan. don't stop at the plan unless I asked for only a plan.
-- find root causes with evidence (logs, a repro, the real data, the source). don't guess, don't ask me what the code or config can tell you, and back claims up with hard data. fix the cause instead of raising a timeout or adding a retry.
-- if a bug traces to something I maintain (assistant-ui's packages, my own repos and services), fix it there when that's low-lift instead of working around it.
-- if I say a fix didn't work ("still happening", "the issue persists"), don't reapply a variation of the same fix. start the diagnosis over, reproduce it yourself, and look at it (screenshot it if it's visual) until you see what I see.
-- verify your own work before calling it done: type check, lint, tests, and for UI, look at it. don't hand me things to check that you could check.
-- when there are steps only I can do (a dashboard, secrets, a deploy, a backfill), end with a short, numbered list of exactly what I need to do, with commands in code blocks.
-- if I hand you a decision with "choose the best one" or "what you think is best", decide and do it. if I've left something out of a feature request, fill it in sensibly, and push back on my requirements if a different design would be better.
-- big or multi-part tasks: use subagents in parallel, one per area or feature, then have a second pass verify their work and pick up anything new it finds.
-- exploration, research, audits, and option lists go in an artifact so I can come back to them. when I'll be choosing between items, make it a table with a checkbox per row.
-- "audit" means: review the whole project and report numbered, actionable findings. I'll usually follow up with "fix everything above".
-- "try again" or "retry" means redo whatever just failed. if I say I hit a usage limit, pick up exactly where you stopped.
-- stop any dev servers or background processes you started once you're done with them.
+- beyond a one-liner: investigate, find the actual cause, plan, then execute. stop at the plan only if I asked for just a plan. a recommendation inside the scope I asked for gets implemented, not offered.
+- a question ("is there a way", "would it be possible", "explain X") gets an answer, not a code change.
+- find root causes with evidence (logs, a repro, real data, the source) and back claims with hard data. don't guess or ask me what the code or config can tell you. fix the cause instead of raising a timeout or adding a retry.
+- fix every other place with the same pattern as the bug. when I list several bugs, check for a shared cause first.
+- if a bug traces to something I maintain (assistant-ui's packages, my own repos), fix it there when that's low-lift. a service I only host (HappyView, anything on Railway) isn't mine: work within its current behavior, and if it needs a fix, give me a `.patch` and a minimal repro for its maintainer.
+- if I say a fix didn't work, don't reapply a variation. start the diagnosis over and reproduce it yourself (screenshot it if visual) until you see what I see. "fixed" means you reproduced my exact symptom (same environment, local or production, theme, width, account) and saw it gone after. use the repo's test accounts instead of asking me for logs. if your screenshot still shows the problem, it isn't fixed.
+- claims from other agents ("fixed", "verified", handoffs, commit messages) are unverified until you check them. prompts you write for another agent are self-contained: paths, current state, what's done, what's left.
+- verify your work before calling it done: type check, lint, tests, and looking at UI. don't hand me checks you could do.
+- do steps yourself when you can (cli, `gh`, `tg`, `railway`, the browser, computer use), letting me approve the prompt instead of pasting commands. when steps only I can do remain (a dashboard, secrets, a deploy, a backfill), end with a short numbered list of them, commands in code blocks. for anything I'll try, end with the exact command to run it.
+- "choose the best one" or "what you think is best" means decide and do it. fill gaps in feature requests sensibly, and push back if a different design would be better.
+- fix small, clearly real problems nearby (a stale comment, the README, a broken test) and mention them. don't restyle or redesign anything I didn't name.
+- use subagents by default for independent parts, one per area or feature, then a second pass to verify their work and pick up anything new. I shouldn't have to ask.
+- exploration, research, audits, and option lists go in an artifact I can come back to. for choosing between items, a table with a checkbox per row.
+- number suggestions and findings.
+- shorthand:
+  - "implement your suggestions": all of them unless I exclude some. "your recommendation": your top pick.
+  - "audit": review the whole project and report numbered, actionable findings. I'll usually follow with "fix everything above".
+  - "do a pass over X": go through all of X for that one concern and fix what you find.
+  - "status?" or "check in": a short report of done, still running (subagents, CI), waiting on me (numbered, with commands), and next. no new work.
+  - "try again" or "retry": redo what just failed.
+  - "resume": pick up this session's unfinished work (todos, git status, background tasks) without asking what it was. after a usage limit, continue exactly where you stopped.
+  - "done" after you gave me steps: check they took, then keep going.
+- stop dev servers and background processes you started once you're done with them.
 
 ## git
 
-- **never commit without asking me with options first.** If I explicitly ask for a commit, you are allowed to commit.
-- **if a goal is explicitly set that requires repetitive commiting, ask me what I want you to do**.
-- my commits are signed through 1Password and I make them myself.
-- for each git forge, I have bot accounts configured for committing and with different accounts than my own. The same rules apply to them unless I explicitly tell you otherwise.
-- when I do ask, fixes go in new commits on top. never amend, squash, or rebase commits, and never force-push (`--force`, `--force-with-lease`), unless I ask for that specifically, and that includes restacking.
-- don't get around git hooks or signing on real commits (`--no-verify`, `core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`). if one fails, fix the cause or tell me.
-- don't use git worktrees. I hate them. if work ends up in one, move the changes into a dedicated branch or onto main without committing.
-- name branches `bnb/<feature-name>`. one branch per concern, unless I ask for a branch per fix.
-- once complete with committing work, end back on main.
+- **never commit without asking me with options first**, unless I explicitly ask for a commit.
+- **if a goal needs repeated commits, ask me how to handle it.**
+- commit with whatever identity git has configured here (per-forge bot accounts, separate from mine; same rules apply unless I say otherwise). signing goes through 1Password: if signing or ssh auth fails, stop, tell me, and retry the same command when I say it's unlocked.
+- fixes go in new commits on top. no amending or squashing, and no rebasing or force-pushing unless I say "rebase" or "restack", which covers those branches and the `--force-with-lease` push after. otherwise resolve conflicts by merging the base in.
+- don't bypass hooks or signing on real commits (`--no-verify`, `core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`). if one fails, fix the cause or tell me.
+- no AI attribution: no `Co-Authored-By` trailers or "Generated with Claude Code" lines, even when a tool says to add one.
+- **never create git worktrees** (`.claude/worktrees/`, `.wt-*`, subagent isolation). I hate them. subagents work in my checkout. if work ends up in one, move it to a dedicated branch or main without committing.
+- several agents usually share my checkout. leave changes you didn't make alone (no stashing, resetting, reverting, or formatting them), re-read files right before editing, and tell me if two tasks touch the same files.
+- every branch, stacked ones too, is `bnb/<feature-name>` (no `ci/` or `fix/`). one branch per concern unless I ask for one per fix.
+- don't push until I say so. get the branch ready, run the local checks so CI isn't the first test, and tell me.
+- after committing, end on main.
 
 ## PRs
 
-- before opening a PR or issue, show me the title and body here and wait for me to approve it. use the repo's PR/issue template if it has one.
-- PR bodies: humanized, plain prose that lists what was added, changed, and removed, with enough detail to review. no "Generated with Claude Code" line or other AI footer.
-- in upstream bug reports, link the exact lines of source instead of describing them, and include a minimal repro.
-- when I ask for stacked PRs, use the `gh` stack plugin.
-- run the local checks before pushing so CI isn't the first test.
-- CI costs money. don't push over and over to satisfy review bots: triage bot comments as blocking or not, reply to the comment with a GitHub suggestion block to confirm a fix before pushing, and batch real fixes into one push. after two push rounds on a PR, stop and hand it back to me. expensive suites belong on a schedule or `workflow_dispatch`, not every PR.
+- first, check open PRs and main for overlapping work and show me what you find.
+- **show me every PR or issue title and body here and wait for my approval before opening it**, a whole stack at once. use the repo's template if it has one.
+- PR bodies: humanized plain prose listing what was added, changed, and removed, detailed enough to review.
+- in PRs, issues, and replies, link the comments, runs, and source lines you mean instead of describing them. numbers come from a real run I can click through to. upstream bug reports also get a minimal repro.
+- replies, comments, and messages I ask for come back as paste-ready markdown here. I'll post them.
+- stacked PRs use the `gh` stack plugin. "fix conflicts" or "make it mergeable" means work bottom-up with it, run local checks on each branch, and confirm GitHub shows each PR mergeable before calling it done.
+- CI costs money, so don't push repeatedly for review bots. triage bot comments as blocking or not, confirm a fix by replying with a GitHub suggestion block before pushing, and batch real fixes into one push. after two push rounds on a PR, hand it back to me. expensive suites run on a schedule or `workflow_dispatch`, not every PR.
+- "address feedback": every review comment on the PRs, human and bot. lean toward the suggested change, batch into one push, and tell me what you declined and why.
 
 ## code
 
-- keep the code as small as is technically possible. minimal changesets, no dead code, no duplication. when a change makes something obsolete, remove it in the same change.
-- reuse what exists. when two places need the same logic, modularize it once and expose the real differences as options, never as copy-pasted variants.
-- only add an abstraction once something needs it. no single-use helper where an inline expression reads fine, but do name intermediate values when that makes a condition read clearly (`const isExpired = ...; if (isExpired && isOwner)`).
-- keep the happy path left-aligned with early returns instead of nesting. prefer small, well-scoped files over growing one big one.
-- don't add dependencies without a reason, but don't be scared to add dependencies. add, remove, and upgrade them with the package manager (`pnpm add`, `cargo add`), never by editing the manifest or lockfile by hand. prefer a tool's built-in feature over custom scripting (vitest's coverage thresholds instead of a script, an existing OAuth client instead of writing one).
-- follow each ecosystem's best practices and conventions. when unsure, look at how well-maintained open source projects do it, and favor their patterns over code we wrote recently.
-- TypeScript: strict, no `any`, explicit types that are accurate to the runtime data.
-- names say what code does and comments say why, and every comment must describe what the code actually does now. when you refactor or simplify, keep the comments and docstrings that are still true and update the ones you made stale. keep the README in sync in the same change, and keep it concise.
-- after a long session with lots of edits, review every file you touched: remove dead code, fix stale comments, dedupe, and check the README is still true.
-- features are additive by default. imports and merges add to existing data (deduplicated), and replacing or deleting is an explicit opt-in.
-- user state and settings persist across reloads, navigation, and reopening. nothing should silently reset.
-- never modify my real data (a user's library database, production records) while fixing things. work on copies or fixtures.
-- request the narrowest permissions and OAuth scopes that work. never print secrets, and make sure CI secrets can't leak through outside pull requests.
+- keep code as small as technically possible: minimal changesets, no dead code, no duplication. remove what a change makes obsolete in the same change.
+- reuse what exists. shared logic gets modularized once, with the real differences as options, never copy-pasted variants.
+- add an abstraction only once something needs it. no single-use helper where an inline expression reads fine, but name intermediate values when that clarifies a condition (`const isExpired = ...; if (isExpired && isOwner)`).
+- left-align the happy path with early returns. prefer small, well-scoped files over one big one.
+- before writing a client, parser, script, component, or vendored copy, look for an existing package, CLI, platform API, or component library entry, and tell me what you found. maintained beats homemade. prefer a tool's built-in feature over custom scripting (vitest's coverage thresholds, an existing OAuth client).
+- add dependencies when there's a reason, without fear. use the package manager (`pnpm add`, `cargo add`), never hand-edit manifests or lockfiles.
+- follow each ecosystem's conventions. when unsure, favor well-maintained open source projects' patterns over code we wrote recently.
+- if a lint or static check could catch a finding, add the check too. move projects off eslint, prettier, or markdownlint to oxlint and oxfmt when I touch them.
+- TypeScript: strict, no `any`, explicit types accurate to the runtime data.
+- new code ships with accurate types, tests, and pino logs where I'd want them for debugging. shared types live in one place, duplicate shapes merged.
+- names say what, comments say why, and every comment matches what the code does now. when refactoring, keep the true comments and docstrings and fix the ones you made stale. keep the README concise and in sync in the same change.
+- every project has one script each for dev (everything running), check, and deploy or publish, listed in the README. anything I'd paste into a dashboard more than once becomes an idempotent script that skips unchanged items.
+- growing lists (providers, sites, checks) live in a checked-in JSON file with a JSON Schema. if users might change them, expose them in settings with import and export.
+- after a long session, review every file you touched for dead code, stale comments, and duplication, and check the README is still true.
+- features are additive by default: imports and merges add to existing data (deduplicated). replacing or deleting is opt-in.
+- user state and settings persist across reloads, navigation, and reopening, never silently resetting. new state joins persistence and export/import in the same change.
+- never modify my real data (a library database, production records) while fixing things. use copies or fixtures.
+- request the narrowest permissions and OAuth scopes that work. never print secrets, and keep CI secrets from leaking through outside pull requests.
 
 ## tests
 
-- every project has tests and coverage. raise coverage whenever you touch code, biggest gains first, and set thresholds just under the current numbers.
-- don't change existing valid tests to make them pass (adding tests is fine). when a test fails, work out whether the code or the test is wrong before touching either.
-- a new test must fail when its expectation is broken. check that by breaking it at least once.
-- test behavior from the outside. assert on results instead of which mocks got called, mock as little as you can, and find UI the way a person would (role, label, text). exclude code with nothing worth testing (types, config, re-exports) from coverage instead of writing a test that mirrors it.
+- every project has tests and coverage. run coverage, not just tests: a change under the thresholds isn't done. raise coverage whenever you touch code, biggest gains first, and set thresholds just under the current numbers. with no coverage tooling, measure my diff with temporary tooling, raise it, and remove the tooling before committing.
+- don't change valid tests to make them pass (adding tests is fine). when one fails, work out whether the code or the test is wrong before touching either.
+- a new test must fail when its expectation breaks. break it at least once to check.
+- test behavior from the outside: assert on results, not mock calls, mock as little as possible, and find UI by role, label, or text. exclude code with nothing to test (types, config, re-exports) from coverage instead of mirroring it in a test.
 - flaky tests get a root-cause fix (fake timers, a real hydration signal, deterministic fixtures), never a longer timeout. confirm with repeated runs.
-- for native apps, build a harness that can drive every surface, then use it (with subagents per feature) to find what's broken. If there are existing tools that are purpose-fit, prefer them.
+- every app (native, Electron, browser extension) gets a harness that drives every surface, preferring purpose-fit existing tools. use it, with subagents per feature, to find what's broken.
 
 ## UI and design
 
-- make it look great and cohesive: polished, consistent with the rest of the app, using the existing design language. new things should look native, never hacked in. match the size and height of neighboring elements exactly.
-- no flashes, jumps, or jitter. persist preferences so the first paint is already right (theme, settings, auth state), and keep layout stable when loaders appear and disappear.
-- never block a page on data. render the static parts immediately, ghost only the dynamic data, and show each result as soon as it resolves (counts included). startup should feel instant, roughly 200ms.
-- design every state: loading, empty, and error. errors should look like an expected part of the app and offer the next step.
-- when I ask for design options, make several genuinely different variants I can actually open and compare.
+- polished and cohesive, in the app's existing design language. new things look native, never hacked in, and match neighboring elements' size and height exactly.
+- check UI at phone, narrow-panel, and wide widths and while scrolling, in dev and a production build, and show me before and after screenshots.
+- no flashes, jumps, or jitter. persist preferences so the first paint is right (theme, settings, auth state), and keep layout stable as loaders come and go.
+- never block a page on data. render static parts immediately, ghost only dynamic data, and show each result (counts included) as it resolves. startup should feel instant, about 200ms.
+- design every state (loading, empty, error), each with a Storybook story, mobile too. errors look like an expected part of the app and offer the next step.
+- returning users: catch an expired session on load, not on the first click. when navigating between items, never show the previous one's data.
+- when a background check fails, fall back to a sane state (signed out, partial data), not a blocking notice. users never see internal state or diagnostics, and copy never mentions implementation details.
+- design options means several genuinely different variants I can open and compare.
 - accessibility and Lighthouse checks are part of done.
 
 ## writing
 
-- **never use em dashes (U+2014)**, in anything: UI text, docs, comments, commit messages, PR bodies, or as an HTML entity. restructure the sentence instead.
-- user-facing copy should be about as long as what an ordinary web app shows: one-line hints, one-line empty states, short labels. trim anything wordier.
-- write like a person. no AI tells (forced triads, "not X but Y", inflated claims, filler). run a humanizer pass on docs, comments, PR bodies, and commit messages.
-- no emoji in replies, docs, comments, commits, or PR bodies. UI gets them only when the design calls for it.
-- match the voice already in the repo. in my personal projects that's casual, direct, first person, often lowercase.
+- **never use em dashes (U+2014)** anywhere, HTML entities included. restructure the sentence instead.
+- user-facing copy is as short as an ordinary web app's: one-line hints and empty states, short labels.
+- write like a person, with no AI tells (forced triads, "not X but Y", inflated claims, filler). run a humanizer pass on docs, comments, PR bodies, and commit messages.
+- no emoji in replies, docs, comments, commits, or PR bodies. UI only when the design calls for it.
+- match the repo's voice. in my personal projects that's casual, direct, first person, often lowercase.
 - be precise about what something does. don't overclaim.
 
 ## tools
 
-- use `gh` for anything on GitHub, not curl against api.github.com.
-- in the shell, `rg` instead of grep and `fd` instead of find. both skip whatever .gitignore ignores, like node_modules.
-- use `tg` for tangled, rather than curl against their API or the AT Protocol
-- use `railway` for railway connections
+- `gh` for GitHub (not curl against api.github.com), `tg` for tangled (not curl against its API or the AT Protocol), `railway` for Railway.
+- `rg` over grep and `fd` over find. both skip .gitignored paths like node_modules.
 
 ## other people's services
 
-- hit third-party sites and APIs as little as possible. use what's already on the page or in a cache first, and stay above board.
-- fetch on demand (prefetching what the user is likely to open next) instead of scheduled crawls or cron jobs, and don't add manual data-collection steps.
-- don't persist data that's cheap to fetch again. keep storage small.
+- hit third-party sites and APIs as little as possible: use what's on the page or cached first, and stay above board.
+- fetch on demand (prefetching what's likely next), not scheduled crawls or cron jobs, and no manual data-collection steps.
+- don't persist data that's cheap to refetch. keep storage small.
 
 ## AT Protocol
 
-- prefer `at://` URIs over https links whenever a record exists.
-- before inventing a lexicon, check [lexicon.garden](https://lexicon.garden) for an existing one and for conventions. use `knownValues` rather than a closed `enum` for strings that will grow.
-- be client-neutral: don't hardcode Bluesky. let people choose which app opens posts.
-- in UI, call the account people sign in with an "Atmosphere account".
-- keep data in the user's PDS and on the client where possible. when a project uses HappyView as its AppView, data collection lives there (lexicons and Lua), not in app scripts.
+- prefer `at://` URIs over https links when a record exists.
+- before inventing a lexicon, check [lexicon.garden](https://lexicon.garden) for an existing one and for conventions. use `knownValues`, not a closed `enum`, for strings that will grow.
+- be client-neutral: don't hardcode Bluesky, and let people choose which app opens posts.
+- in UI, the account people sign in with is an "Atmosphere account".
+- keep data in the user's PDS and on the client where possible. with HappyView as the AppView, data collection lives there (lexicons and Lua), not in app scripts, and every read goes through it, never straight to a PDS or the Bluesky AppView. persist records on demand for the DIDs we need, never by backfilling a whole collection.
 - support [at-tags](https://tangled.org/chrisshank.com/at-tags/) and standard.site metadata where they apply.
 
 ## default stack for new projects
 
-unless the project already says otherwise: Node.js, TypeScript, SvelteKit with Svelte 5, shadcn-svelte, Vite, Vitest with `@vitest/coverage-v8`, Playwright, Storybook, Lighthouse, oxlint and oxfmt (not eslint or prettier), and pino for logs. Electron apps use Electron Forge. Rust TUIs use ratatui.
+unless the project says otherwise: Node.js, TypeScript, SvelteKit with Svelte 5, shadcn-svelte, Vite, Vitest with `@vitest/coverage-v8`, Playwright, Storybook, Lighthouse, oxlint and oxfmt (not eslint or prettier), and pino for logs. Electron apps use Electron Forge. Rust uses cargo-nextest, clippy, rustc_hash for hash maps, IndexMap over BTreeMap, and hegel for property tests, with ratatui for TUIs.
