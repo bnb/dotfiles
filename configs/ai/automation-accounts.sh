@@ -9,14 +9,14 @@
 # as the bot for that forge.
 #
 #   config:ai-github  login | apply | remove | toggle
-#   config:ai-tangled login | apply | remove
+#   config:ai-tangled login | apply | remove | toggle
 #   config:ai-github status   (either alias - it shows both forges)
 #
 # `login` is once per machine and runs `apply` itself; setup.sh re-runs `apply`
 # for both. `remove` unwires one forge and leaves its login alone. `toggle`
-# (also the toggle:ai-github alias) flips GitHub between the automation account
-# and mine, and `apply` - setup.sh's included - leaves it off until it's
-# toggled back.
+# (also the toggle:ai-github and toggle:ai-tangled aliases) flips one forge
+# between its bot and my own account, and `apply` - setup.sh's included -
+# leaves it off until it's toggled back.
 #
 # It all hangs off environment variables set only in the agents' own config -
 # Claude Code's settings (see claude_targets) and ~/.codex/config.toml's
@@ -70,8 +70,6 @@ AI_SSH_CONFIG="$AI_AGENTS_DIR/ssh_config"
 AI_GITHUB_AUTH_KEY="$AI_AGENTS_DIR/github-auth.pub"
 AI_GITHUB_SIGNING_KEY="$AI_AGENTS_DIR/github-signing.pub"
 AI_GITHUB_DIR="${AI_GITHUB_DIR:-$CONFIG_HOME/gh-automation}"
-# present while `toggle` has agents on my own GitHub account
-AI_GITHUB_OFF="$AI_AGENTS_DIR/github.off"
 AI_TANGLED_HANDLE="${AI_TANGLED_HANDLE:-bot.bnb.im}"
 
 # Always the real ~/.claude, never $CLAUDE_CONFIG_DIR: inside a `clauth start`
@@ -87,6 +85,11 @@ CLAUTH_WORK_PROFILE=work
 TANGLED_HOSTS="tangled.org tangled.sh"
 
 FORGE=""
+
+# present while `toggle` has agents on my own account for that forge
+off_marker() {
+  printf '%s/%s.off\n' "$AI_AGENTS_DIR" "$1"
+}
 
 say() {
   printf 'config:ai-%s - %s\n' "${FORGE:-accounts}" "$*"
@@ -654,6 +657,15 @@ EOF
 EOF
     fi
 
+    cat <<EOF
+
+# The GitHub bot's identity means nothing to Tangled, so repos with a Tangled
+# remote get mine back: all of ~/.gitconfig again, signing included. When the
+# Tangled bot is wired, ./tangled.gitconfig comes after this and wins.
+EOF
+    # shellcheck disable=SC2088 # git expands it, not the shell
+    tangled_includeifs '~/.gitconfig'
+
     work="$(work_includes "$1")"
     if [ -n "$work" ]
     then
@@ -716,6 +728,24 @@ EOF
   install_file "$tmp" "$AI_SSH_CONFIG"
 }
 
+# usage: tangled_includeifs <path>
+#
+# Includes <path> in any repo with a Tangled remote. These match the URL as
+# written in the repo's config, before any insteadOf rewrite.
+tangled_includeifs() {
+  local host
+
+  for host in $TANGLED_HOSTS
+  do
+    # `git@host:**` would miss handle/repo paths: ** only spans slashes as
+    # a whole path component
+    printf '[includeIf "hasconfig:remote.*.url:git@%s:*"]\n\tpath = %s\n' "$host" "$1"
+    printf '[includeIf "hasconfig:remote.*.url:git@%s:*/**"]\n\tpath = %s\n' "$host" "$1"
+    printf '[includeIf "hasconfig:remote.*.url:ssh://git@%s/**"]\n\tpath = %s\n' "$host" "$1"
+    printf '[includeIf "hasconfig:remote.*.url:https://%s/**"]\n\tpath = %s\n' "$host" "$1"
+  done
+}
+
 # usage: write_tangled_gitconfig <handle> <did> <path to tg>
 write_tangled_gitconfig() {
   local tmp host
@@ -750,18 +780,9 @@ EOF
 
 # Commit as $1 in any repo with a Tangled remote. Tangled credits a commit to
 # the account whose DID is the committer email, so no address is needed.
-# Unsigned, for the same reason as the GitHub fragment. These match the URL as
-# written in the repo's config, before the rewrite above.
+# Unsigned, for the same reason as the GitHub fragment.
 EOF
-    for host in $TANGLED_HOSTS
-    do
-      # `git@host:**` would miss handle/repo paths: ** only spans slashes as
-      # a whole path component
-      printf '[includeIf "hasconfig:remote.*.url:git@%s:*"]\n\tpath = tangled-identity.gitconfig\n' "$host"
-      printf '[includeIf "hasconfig:remote.*.url:git@%s:*/**"]\n\tpath = tangled-identity.gitconfig\n' "$host"
-      printf '[includeIf "hasconfig:remote.*.url:ssh://git@%s/**"]\n\tpath = tangled-identity.gitconfig\n' "$host"
-      printf '[includeIf "hasconfig:remote.*.url:https://%s/**"]\n\tpath = tangled-identity.gitconfig\n' "$host"
-    done
+    tangled_includeifs tangled-identity.gitconfig
   } > "$tmp"
   install_file "$tmp" "$AI_AGENTS_DIR/tangled.gitconfig" || return 1
 
@@ -843,12 +864,7 @@ cmd_github_apply() {
   need git
   need python3
 
-  # toggled off on purpose, so setup.sh's re-apply mustn't switch it back
-  if [ -f "$AI_GITHUB_OFF" ]
-  then
-    say "Claude Code is toggled to your own GitHub account - \`toggle:ai-github\` switches it back to the automation account"
-    return 0
-  fi
+  toggled_off && return 0
 
   if ! github_logged_in
   then
@@ -966,6 +982,8 @@ cmd_tangled_apply() {
   need git
   need python3
 
+  toggled_off && return 0
+
   did="$(tangled_did "$AI_TANGLED_HANDLE")"
   if [ -z "$did" ]
   then
@@ -1047,7 +1065,7 @@ cmd_remove() {
   unwire || return 1
 
   # not managed at all now, so a later apply or login should wire it again
-  [ "$FORGE" = github ] && rm -f "$AI_GITHUB_OFF"
+  rm -f "$(off_marker "$FORGE")"
 
   case "$FORGE" in
     github) say "the automation account is still logged in at $AI_GITHUB_DIR - \`GH_CONFIG_DIR=$AI_GITHUB_DIR gh auth logout\` drops it" ;;
@@ -1055,24 +1073,47 @@ cmd_remove() {
   esac
 }
 
-# Flips Claude Code outside work sessions between the automation account and
-# mine on GitHub. Off is unwire plus a marker file, so apply - setup.sh's
-# included - keeps it off rather than quietly switching back.
-cmd_github_toggle() {
-  local personal
+# usage: my_account
+#
+# Who I am on $FORGE, for messages. Empty when I'm not logged in.
+my_account() {
+  local terminal
 
-  if [ -f "$AI_GITHUB_OFF" ]
+  case "$FORGE" in
+    github) personal_github_login ;;
+    tangled)
+      terminal="$(tangled_terminal_account)"
+      printf '%s\n' "${terminal#* }"
+      ;;
+  esac
+}
+
+# Toggled off on purpose, so apply - setup.sh's re-apply included - mustn't
+# switch it back. Says so when it is.
+toggled_off() {
+  [ -f "$(off_marker "$FORGE")" ] || return 1
+  say "agents are toggled to your own $FORGE account - \`toggle:ai-$FORGE\` switches them back to the bot"
+}
+
+# Flips the agents between $FORGE's bot and my own account there. Off is
+# unwire plus a marker file, so apply keeps it off rather than quietly
+# switching back.
+cmd_toggle() {
+  local marker me
+
+  marker="$(off_marker "$FORGE")"
+  if [ -f "$marker" ]
   then
-    rm -f "$AI_GITHUB_OFF"
-    cmd_github_apply
+    rm -f "$marker"
+    "cmd_${FORGE}_apply"
     return
   fi
 
-  mkdir -p "$AI_AGENTS_DIR" && : > "$AI_GITHUB_OFF" || die "couldn't write $AI_GITHUB_OFF"
+  mkdir -p "$AI_AGENTS_DIR" && : > "$marker" || die "couldn't write $marker"
   unwire || return 1
 
-  personal="$(personal_github_login)"
-  say "Claude Code will act as ${personal:-your own account} on GitHub - \`toggle:ai-github\` switches it back to the automation account"
+  me="$(my_account)"
+  say "agents will act as ${me:-your own account} on $FORGE - \`toggle:ai-$FORGE\` switches them back to the bot"
 }
 
 row() {
@@ -1105,7 +1146,7 @@ cmd_status() {
       automation="$(gh_automation api user --jq .login 2>/dev/null || echo "logged in, but GitHub rejected the token")"
     fi
     row "terminal" "${personal:-not logged in}"
-    if [ -f "$AI_GITHUB_OFF" ]
+    if [ -f "$(off_marker github)" ]
     then
       row "Claude Code" "${personal:-not logged in} too - toggled off, toggle:ai-github switches it to ${automation:-the automation account}"
     else
@@ -1144,7 +1185,10 @@ cmd_status() {
     else
       row "terminal" "not logged in - tg auth login <your handle>"
     fi
-    if [ -n "$did" ]
+    if [ -f "$(off_marker tangled)" ]
+    then
+      row "agents" "${personal:+${personal#* } too - }toggled off, toggle:ai-tangled switches them to $AI_TANGLED_HANDLE"
+    elif [ -n "$did" ]
     then
       row "agents" "$AI_TANGLED_HANDLE ($did)"
     else
@@ -1173,7 +1217,7 @@ cmd_status() {
 usage() {
   cat >&2 <<'EOF'
 usage: config:ai-github  <login|apply|status|remove|toggle>
-       config:ai-tangled <login|apply|status|remove>
+       config:ai-tangled <login|apply|status|remove|toggle>
 
   login [flags]   log the forge's automation account in, then apply
                     github:  gh auth login flags, e.g. --with-token < token.txt
@@ -1182,8 +1226,8 @@ usage: config:ai-github  <login|apply|status|remove|toggle>
                   work sessions, Tangled's for Claude Code and Codex
   status          which accounts the terminal and the agents use, on both forges
   remove          undo apply for this forge (the login stays)
-  toggle          github only: switch Claude Code between the automation
-                  account and yours (also toggle:ai-github)
+  toggle          switch the agents between the forge's bot and your own
+                  account (also toggle:ai-github, toggle:ai-tangled)
 EOF
   exit 64
 }
@@ -1199,6 +1243,6 @@ case "${2:-}" in
   apply)  "cmd_${FORGE}_apply" ;;
   status) cmd_status ;;
   remove) cmd_remove ;;
-  toggle) [ "$FORGE" = github ] || usage; cmd_github_toggle ;;
+  toggle) cmd_toggle ;;
   *)      usage ;;
 esac
