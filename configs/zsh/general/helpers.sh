@@ -1,7 +1,7 @@
 # Shared helpers for the rest of this repo's configs.
 #
 # Every $PERSONAL_SETUP_* flag is documented as "set to `true`", so check the
-# *value* rather than just "does this variable exist?" — otherwise
+# *value* rather than just whether the variable exists. Otherwise
 # `PERSONAL_SETUP_FOO=false` turns the block on instead of off.
 
 # usage: __personal_enabled "$PERSONAL_SETUP_MACOS"
