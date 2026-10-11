@@ -142,3 +142,8 @@ fi
 # register themselves with compdef.
 source "$PERSONAL_ZSH_DIR/clauth/completions.sh"
 source "$PERSONAL_ZSH_DIR/tg/completions.sh"
+
+# puts the Claude desktop app's own git on the agents' accounts. does nothing
+# outside the app's one-off read of the login shell environment. last, so jq is
+# on $PATH wherever it came from.
+source "$PERSONAL_DOTFILES_PATH/configs/ai/claude-desktop-env.sh"
