@@ -78,9 +78,10 @@ config:ai-github status    # either alias: who the terminal and the agents are o
 config:ai-tangled apply    # re-wire the agents (login already does this, and so does setup.sh)
 config:ai-tangled remove   # unwire one forge (its login stays)
 toggle:ai-github           # flip Claude Code between the GitHub automation account and mine
+toggle:ai-tangled          # flip Claude Code and Codex between @bot.bnb.im and @bnb.im
 ```
 
-**toggling GitHub:** `toggle:ai-github` (or `config:ai-github toggle`) switches Claude Code to my own GitHub account everywhere by unwiring GitHub the same way `remove` does, and leaves a marker at `~/.config/ai-agents/github.off`. while that's there, `apply` (setup.sh's too) leaves GitHub alone instead of quietly switching it back. running the toggle again deletes the marker and runs `apply`, so 1Password needs to be unlocked for that half. `status` shows which way it's set. Tangled stays on the bot either way. as with `apply`, restart running sessions afterwards.
+**toggling:** `toggle:ai-github` and `toggle:ai-tangled` (or `config:ai-<forge> toggle`) put the agents on my own account for that forge by unwiring it the same way `remove` does, and leave a marker at `~/.config/ai-agents/<forge>.off`. while that's there, `apply` (setup.sh's too) leaves that forge alone instead of quietly switching it back. running the toggle again deletes the marker and runs `apply`, which for GitHub needs 1Password unlocked. each forge toggles on its own, and `status` shows which way each is set. with Tangled off, `tg` falls back to the account [configs/tg/config.toml](../tg/config.toml) pins (mine), and Tangled repos commit as me even while the GitHub bot is on. as with `apply`, restart running sessions afterwards.
 
 **GitHub:** `login` opens the browser for gh's device-code flow. **sign the browser into the automation account before you enter the code**, because the code authorizes whichever account the browser is signed into (a private window is the easy way). if it ends up logged in as my personal account anyway, the script notices, throws that login away, and stops. with a token instead: `config:ai-github login --with-token < token.txt`.
 
@@ -97,7 +98,7 @@ environment variables, set only in each agent's own config, so nothing else on t
   - authenticates HTTPS through that forge's CLI (`gh auth git-credential` or `tg auth git-credential`), which reads the variables above. osxkeychain gets cleared out first, since it may be holding my own credentials. `tg` mints a short-lived push token for the repo's knot each time instead of storing one.
   - commits as the bot.
 
-  the GitHub bot is the default identity. the Tangled bot takes over in any repo with a Tangled remote, matched with `includeIf "hasconfig:remote.*.url:..."`, and wins in a repo that has remotes on both. its commit email is its DID, which is how Tangled credits a commit to an account without a verified email address.
+  the GitHub bot is the default identity, except in repos with a Tangled remote (matched with `includeIf "hasconfig:remote.*.url:..."`), which get mine back. the Tangled bot takes over in those when it's wired, and wins in a repo that has remotes on both. its commit email is its DID, which is how Tangled credits a commit to an account without a verified email address.
 
 ### the GitHub bot's keys, from 1Password
 

@@ -96,8 +96,9 @@ alias config:npm='source "$PERSONAL_DOTFILES_PATH/configs/zsh/general/config-npm
 # run, not sourced like the two above: it's a bash script with subcommands
 alias config:ai-github='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" github'
 alias config:ai-tangled='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" tangled'
-# flips Claude Code between the GitHub automation account and mine
+# flip the agents between each forge's bot and my own account
 alias toggle:ai-github='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" github toggle'
+alias toggle:ai-tangled='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" tangled toggle'
 # tracehub for my work checkouts under ~/GitHub/assistant-ui, nowhere else
 alias config:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh"'
 alias toggle:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh" toggle'
