@@ -38,6 +38,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - no AI attribution: no `Co-Authored-By` trailers or "Generated with Claude Code" lines, even when a tool says to add one.
 - never create git worktrees (`.claude/worktrees/`, `.wt-*`, subagent isolation). I hate them. subagents work in my checkout. if work ends up in one, move it to a dedicated branch or main without committing.
 - several agents usually share my checkout. leave changes you didn't make alone (no stashing, resetting, reverting, or formatting them), re-read files right before editing, and tell me if two tasks touch the same files.
+- before changing files, start a branch from an up-to-date main (`git fetch`, then `git switch -c bnb/<feature-name> origin/main`) unless you're already on this work's branch. stacked branches start from the branch below them.
 - every branch, stacked ones too, is `bnb/<feature-name>` (no `ci/` or `fix/`). one branch per concern unless I ask for one per fix.
 - don't push until I say so: every push runs CI, which costs money. get the branch ready, run the local checks so CI isn't the first test, and tell me.
 - after committing, end on main.
