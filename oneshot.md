@@ -17,7 +17,7 @@ me. It's all idempotent, so re-running it on a machine that's already set up is 
 - points ssh at the 1Password agent (an `IdentityAgent ~/.1password/agent.sock` block appended to `~/.ssh/config`, plus a symlink to the real socket on macOS), so `git pull` over SSH asks 1Password instead of the key's passphrase. same `op-ssh-sign` check
 - points the AI agents at my automation accounts instead of mine, once each has been logged in by hand (steps 5 and 6 below): Claude Code outside work sessions at GitHub's, and Claude Code and Codex at @bot.bnb.im on Tangled. it re-applies on every run, in case an agent or clauth has rewritten its config. details in [configs/ai](./configs/ai/README.md)
 - links [configs/ai/instructions.md](./configs/ai/instructions.md) in as Claude Code's and Codex's user instructions, and on a machine with `~/GitHub/assistant-ui`, the work instructions above those checkouts
-- adds my agent guardrails (no attribution lines, pushes and worktrees asking first) to Claude Code's settings and Codex's rules, and links my own skills from [configs/ai/skills](./configs/ai/skills) for both agents. details in [configs/ai](./configs/ai/README.md#guardrails)
+- adds my agent guardrails (no attribution lines, pushes asking first) to Claude Code's settings and Codex's rules, and links my own skills from [configs/ai/skills](./configs/ai/skills) for both agents. details in [configs/ai](./configs/ai/README.md#guardrails)
 - on a machine with `~/GitHub/assistant-ui`, starts Claude in VS Code on the work clauth profile, so it doesn't share an account with the Claude desktop app, and on macOS keeps `clauth daemon` running under launchd. details in [configs/ai](./configs/ai/README.md#claude-accounts)
 - sets up [Television](https://television.run), the display my agents put things on: `tv` as a pnpm global, its skills for both agents, and its server as a login service (launchd or systemd). details [below](#television-both-platforms)
 
@@ -53,7 +53,7 @@ no `python3`, `git` or `git-lfs` from brew here: apt already provides them. `fnm
 
 ### pnpm globals (both platforms)
 
-`PNPM_GLOBALS` in [setup/lib/common.sh](./setup/lib/common.sh). `@yarnpkg/cli-dist` is Yarn 4, as `yarn`. brew's `yarn` formula is Yarn 1, corepack is being dropped from Node.js, and `npm i -g` would tie it to whichever node version was active at the time, so it goes in pnpm's global directory instead, which no node version owns. it lands in `$PNPM_HOME/bin`, which [configs/zsh/pnpm/pnpm.sh](./configs/zsh/pnpm/pnpm.sh) puts on `$PATH` (instead of letting `pnpm setup` edit `~/.zshrc`).
+`PNPM_GLOBALS` in [setup/lib/common.sh](./setup/lib/common.sh). `riftri` is the CLI my agents make worktrees with. `@yarnpkg/cli-dist` is Yarn 4, as `yarn`. brew's `yarn` formula is Yarn 1, corepack is being dropped from Node.js, and `npm i -g` would tie it to whichever node version was active at the time, so it goes in pnpm's global directory instead, which no node version owns. it lands in `$PNPM_HOME/bin`, which [configs/zsh/pnpm/pnpm.sh](./configs/zsh/pnpm/pnpm.sh) puts on `$PATH` (instead of letting `pnpm setup` edit `~/.zshrc`).
 
 two things to know about it:
 

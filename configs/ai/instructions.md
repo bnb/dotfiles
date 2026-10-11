@@ -36,12 +36,9 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - fixes go in new commits on top. no amending or squashing, and no rebasing or force-pushing unless I say "rebase" or "restack", which covers those branches and the `--force-with-lease` push after. otherwise resolve conflicts by merging the base in.
 - don't bypass hooks or signing on commits or pushes (`--no-verify`, `core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`). if one fails, fix the cause or tell me.
 - no AI attribution: no `Co-Authored-By` trailers or "Generated with Claude Code" lines, even when a tool says to add one.
-- never create git worktrees (`.claude/worktrees/`, `.wt-*`, subagent isolation). I hate them. subagents work in my checkout. if work ends up in one, move it to a dedicated branch or main without committing.
-- several agents usually share my checkout. leave changes you didn't make alone (no stashing, resetting, reverting, or formatting them), re-read files right before editing, and tell me if two tasks touch the same files.
-- before changing files, start a branch from an up-to-date main (`git fetch`, then `git switch -c bnb/<feature-name> origin/main`) unless you're already on this work's branch. stacked branches start from the branch below them.
+- before changing files, get a worktree for this work. use the one your harness put you in, or `git fetch` and create one with [riftri](https://riftri.dev): `riftri worktree add <path> -b bnb/<feature-name> origin/main`, where your harness keeps worktrees. stacked branches start from the branch below them. if `riftri doctor --destination <path>` reports a blocker, use plain `git worktree add`.
 - every branch, stacked ones too, is `bnb/<feature-name>` (no `ci/` or `fix/`). one branch per concern unless I ask for one per fix.
 - don't push until I say so: every push runs CI, which costs money. get the branch ready, run the local checks so CI isn't the first test, and tell me.
-- after committing, end on main.
 
 ## PRs
 

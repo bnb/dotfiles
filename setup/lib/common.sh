@@ -549,8 +549,9 @@ cargo_install_batch() {
 # is Yarn 4: brew only has Yarn 1, corepack is being dropped from Node.js, and
 # `npm i -g` lives inside one node version and vanishes the moment fnm/nvm/asdf
 # switches to another. pnpm's global directory doesn't belong to any node
-# version, and its shims run whichever `node` is on $PATH.
-PNPM_GLOBALS="@yarnpkg/cli-dist"
+# version, and its shims run whichever `node` is on $PATH. riftri is the CLI
+# my agents make worktrees with (configs/ai/instructions.md).
+PNPM_GLOBALS="@yarnpkg/cli-dist riftri"
 
 # usage: pnpm_global_install_batch @yarnpkg/cli-dist
 #
@@ -600,7 +601,7 @@ pnpm_global_install_batch() {
 # install keeps one copy in ~/.agents/skills, which Codex reads as is, and
 # symlinks it into ~/.claude/skills. DO_NOT_TRACK turns off the CLI's telemetry
 # and its third-party security-audit lookups.
-AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop"
+AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop assistant-ui/riftri"
 
 # usage: agent_skills_install_batch blader/humanizer
 #
@@ -1018,11 +1019,11 @@ link_ai_skills() {
 }
 
 # Settings that enforce rules instructions.md can only ask for: no attribution
-# lines, none of Claude Code's own git instructions, and pushes and new
-# worktrees asking first (configs/ai/claude-settings.json, and
-# configs/ai/codex-git.rules for Codex). Added to ~/.claude/settings.json:
-# lists gain the missing entries, and a key already set to something else is
-# left alone. clauth copies these keys into work sessions too.
+# lines, none of Claude Code's own git instructions, and pushes asking first
+# (configs/ai/claude-settings.json, and configs/ai/codex-git.rules for Codex).
+# Added to ~/.claude/settings.json: lists gain the missing entries, and a key
+# already set to something else is left alone. Entries in RETIRED were mine
+# once and get taken out. clauth copies these keys into work sessions too.
 enforce_ai_rules() {
   log_step "adding my guardrails to Claude Code's settings"
   PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
@@ -1033,6 +1034,21 @@ from config_file import read_json, write_json
 
 path, ours = sys.argv[1:]
 settings = read_json(path)
+
+# the guardrails that kept agents out of worktrees, before they used riftri
+RETIRED = {"ask": ["Bash(git worktree add *)"], "deny": ["Agent(isolation:worktree)"]}
+
+
+def retire(permissions):
+    changed = False
+    for key, items in RETIRED.items():
+        current = permissions.get(key)
+        if not isinstance(current, list):
+            continue
+        kept = [item for item in current if item not in items]
+        changed = changed or len(kept) != len(current)
+        permissions[key] = kept
+    return changed
 
 
 def merge(current, wanted):
@@ -1052,7 +1068,8 @@ def merge(current, wanted):
     return changed
 
 
-if merge(settings, read_json(ours)):
+retired = isinstance(settings.get("permissions"), dict) and retire(settings["permissions"])
+if merge(settings, read_json(ours)) or retired:
     write_json(path, settings)
     print("updated")
 else:

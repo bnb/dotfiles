@@ -8,7 +8,7 @@ config for the AI coding agents I use, Claude Code and Codex.
 
 ### guardrails
 
-some rules hold only if a setting backs them, since both agents treat instruction files as context. setup.sh adds [claude-settings.json](./claude-settings.json) to `~/.claude/settings.json`: no attribution trailers or PR footers, none of Claude Code's built-in git instructions (they also drop the git status snapshot at session start), every `git push` and `git worktree add` asking first, and `--no-verify` commits and worktree-isolated subagents denied. lists gain the missing entries, and a key already set to something else is left alone. for Codex it links [codex-git.rules](./codex-git.rules) into `~/.codex/rules`, which makes `git push` and `git worktree add` prompt. both match command text, so forms like `git -C . push` slip past.
+some rules hold only if a setting backs them, since both agents treat instruction files as context. setup.sh adds [claude-settings.json](./claude-settings.json) to `~/.claude/settings.json`: no attribution trailers or PR footers, none of Claude Code's built-in git instructions (they also drop the git status snapshot at session start), every `git push` asking first, and `--no-verify` commits denied. lists gain the missing entries, a key already set to something else is left alone, and the old entries that kept agents out of worktrees get taken out. for Codex it links [codex-git.rules](./codex-git.rules) into `~/.codex/rules`, which makes `git push` prompt. both match command text, so forms like `git -C . push` slip past.
 
 ### work repos
 
@@ -35,6 +35,7 @@ setup.sh installs these for both agents with the [Skills CLI](https://skills.sh)
 
 - [humanizer](https://github.com/blader/humanizer) rewrites text that reads as AI-written. my instructions ask for a pass on docs, comments, PR bodies, and commit messages.
 - [install-anti-slop](https://github.com/dmmulroy/anti-slop) vendors dmmulroy's anti-slop Oxlint rules into a repo, or updates a copy that's already there.
+- [riftri-worktrees](https://github.com/assistant-ui/riftri/blob/main/skills/riftri-worktrees/SKILL.md) is how agents make and clean up the [riftri](https://riftri.dev) worktrees my instructions ask for. setup.sh installs the `riftri` CLI itself as a pnpm global.
 
 my own skills live in [skills/](./skills): rules from my instructions that only matter in some projects, so they load when needed instead of in every session. setup.sh links each `SKILL.md` into `~/.agents/skills` and the folder into `~/.claude/skills`.
 

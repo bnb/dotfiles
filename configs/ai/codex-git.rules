@@ -1,18 +1,10 @@
-# Pushes and new worktrees ask first, the same as Claude Code's permissions in
-# claude-settings.json. My instructions say not to push until I say so and
-# never to create worktrees. setup.sh links this into ~/.codex/rules.
+# Pushes ask first, the same as Claude Code's permissions in
+# claude-settings.json. My instructions say not to push until I say so.
+# setup.sh links this into ~/.codex/rules.
 prefix_rule(
     pattern = ["git", "push"],
     decision = "prompt",
     justification = "pushing runs CI, so I approve each push",
     match = ["git push origin main", "git push --force-with-lease"],
     not_match = ["git pull"],
-)
-
-prefix_rule(
-    pattern = ["git", "worktree", "add"],
-    decision = "prompt",
-    justification = "I don't want worktrees unless I asked for one",
-    match = ["git worktree add .worktrees/x"],
-    not_match = ["git worktree list"],
 )

@@ -6,12 +6,10 @@
   "includeGitInstructions": false,
   "permissions": {
     "ask": [
-      "Bash(git push *)",
-      "Bash(git worktree add *)"
+      "Bash(git push *)"
     ],
     "deny": [
-      "Bash(git commit *--no-verify*)",
-      "Agent(isolation:worktree)"
+      "Bash(git commit *--no-verify*)"
     ]
   }
 }
