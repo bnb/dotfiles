@@ -12,7 +12,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - "fixed" means you reproduced my exact symptom first (same environment, local or production, theme, width, account; screenshot it if visual) and saw it gone after. if your screenshot still shows the problem, it isn't fixed. if I say a fix didn't work, start the diagnosis over instead of reapplying a variation. use the repo's test accounts instead of asking me for logs.
 - claims from other agents ("fixed", "verified", handoffs, commit messages) are unverified until you check them. prompts you write for another agent are self-contained: paths, current state, what's done, what's left.
 - verify your work before calling it done: type check, lint, tests, and looking at UI.
-- do steps yourself when you can (cli, `gh`, `tg`, `railway`, the browser, computer use), letting me approve the prompt instead of pasting commands. when steps only I can do remain (a dashboard, secrets, a deploy, a backfill), end with a short numbered list of them, commands in code blocks. for anything I'll try, end with the exact command to run it.
+- do steps yourself when you can (cli, `gh`, `tg`, `railway`, the browser, computer use), letting me approve the prompt instead of pasting commands. when steps only I can do remain (a dashboard, secrets, a deploy, a backfill), end with one command that does all of them (chain them, or write an idempotent script and give me the command to run it). list separately only what no command can do, like a click in a dashboard. for anything I'll try, end with the exact command to run it.
 - "choose the best one" or "what you think is best" means decide and do it. fill gaps in feature requests sensibly, and push back if a different design would be better.
 - fix small, clearly real problems nearby (a stale comment, the README, a broken test) and mention them. don't restyle or redesign anything I didn't name.
 - use subagents by default for independent parts, one per area or feature, then a second pass to verify their work and pick up anything new. I shouldn't have to ask.
@@ -22,7 +22,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
   - "implement your suggestions": all of them unless I exclude some. "your recommendation": your top pick.
   - "audit": review the whole project and report actionable findings. I'll usually follow with "fix everything above".
   - "do a pass over X": go through all of X for that one concern and fix what you find.
-  - "status?" or "check in": a short report of done, still running (subagents, CI), waiting on me (numbered, with commands), and next. no new work.
+  - "status?" or "check in": a short report of done, still running (subagents, CI), waiting on me (as one command), and next. no new work.
   - "try again" or "retry": redo what just failed.
   - "resume": pick up this session's unfinished work (todos, git status, background tasks) without asking what it was. after a usage limit, continue exactly where you stopped.
   - "done" after you gave me steps: check they took, then keep going.
