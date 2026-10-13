@@ -14,3 +14,11 @@ else
   __personal_debug "skipping cargo: $__personal_cargo_bin doesn't exist"
 fi
 unset __personal_cargo_bin
+
+# brew's rustup is keg-only, so its cargo and rustc proxies sit behind brew's
+# `rust` unless they go first. brew's cargo ignores a project's
+# rust-toolchain.toml and has no llvm-tools, which `cargo llvm-cov` needs.
+if __personal_brew_prefix && [ -d "$__PERSONAL_BREW_PREFIX/opt/rustup/bin" ]
+then
+  path=("$__PERSONAL_BREW_PREFIX/opt/rustup/bin" $path)
+fi
