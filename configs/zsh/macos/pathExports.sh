@@ -21,6 +21,7 @@ __personal_path=(
 if __personal_brew_prefix
 then
   __personal_path+=(
+    "$__PERSONAL_BREW_PREFIX/opt/rustup/bin" # ahead of brew's `rust`, see rust/cargo.sh
     "$__PERSONAL_BREW_PREFIX/bin"
     "$__PERSONAL_BREW_PREFIX/sbin"
     "$__PERSONAL_BREW_PREFIX/opt/python/libexec/bin" # unversioned `python`/`pip`
