@@ -27,6 +27,9 @@ standing instructions for any coding agent working with me (Tierney, they/them),
   - "resume": pick up this session's unfinished work (todos, git status, background tasks) without asking what it was. after a usage limit, continue exactly where you stopped.
   - "done" after you gave me steps: check they took, then keep going.
 - stop dev servers and background processes you started once you're done with them.
+- Rust `target/` dirs eat my disk (every worktree builds its own, and they reach 10 to 100G). be aggressive, since build artifacts are cheap to rebuild:
+  - run `cargo clean` in any worktree you built in before you finish with it, and remove worktrees you created once their branch is merged or abandoned and nothing is uncommitted.
+  - before a Rust build, check `df -h /`. under 100G free, `cargo clean` every project under `~/GitHub` whose `target/` hasn't been built in 3 days, and tell me how much that freed.
 
 ## git
 
