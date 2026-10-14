@@ -160,7 +160,9 @@ run_software_update() {
 # refresh would sign the rest out. `clauth rolling-token work` hands sessions
 # an access token with no refresh token instead, and this daemon is what keeps
 # re-stamping it. A launchd agent keeps it running and restarts it if it
-# crashes.
+# crashes. clauth also spawns a daemon of its own, and a second plain
+# `clauth daemon` exits 0 at once, which launchd counts as done for good, so
+# this one runs with --standby: it waits and takes over when the other exits.
 # -----------------------------------------------------------------------------
 CLAUTH_DAEMON_LABEL="im.bnb.clauth-daemon"
 
@@ -192,6 +194,7 @@ run_clauth_daemon() {
   <array>
     <string>$clauth</string>
     <string>daemon</string>
+    <string>--standby</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
