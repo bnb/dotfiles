@@ -392,6 +392,11 @@ ensure_homebrew() {
 # alyraffauf/tap is tg, the Tangled CLI the AI agents use (configs/ai).
 BREW_TAPS="alyraffauf/tap"
 
+# Formulae only my work checkouts need, so only a machine with $WORK_DIR gets
+# them. infisical supplies the values work apps read in development
+# (config:infisical signs it in).
+WORK_FORMULAE="infisical"
+
 # usage: brew_trust_taps alyraffauf/tap
 #
 # Always returns 0, same as brew_install_batch. Homebrew 7 won't load a formula
@@ -654,6 +659,10 @@ install_packages() {
   log_step "installing packages"
   brew_trust_taps $BREW_TAPS
   brew_install_batch --formula $1
+  if [ -d "$WORK_DIR" ]
+  then
+    brew_install_batch --formula $WORK_FORMULAE
+  fi
   if [ -n "${2:-}" ]
   then
     brew_install_batch --cask $2
