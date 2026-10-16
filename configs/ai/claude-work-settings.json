@@ -6,7 +6,7 @@
       "**Cloud provider(s)**: None configured",
       "**Repository visibility**: PUBLIC; github.com/assistant-ui/assistant-ui (any push here publishes)",
       "**Internal sharing / snippet hosting**: None configured; treat public paste/gist services as outside the trust boundary",
-      "**Secrets management**: GitHub Actions secret `CLAUDE_CODE_OAUTH_TOKEN` referenced in CI; no other secrets manager configured",
+      "**Secrets management**: Infisical, signed in as me through the `assistant-ui` login profile bound to ~/GitHub/assistant-ui; dev scripts read their values at startup with `infisical run`. GitHub Actions secret `CLAUDE_CODE_OAUTH_TOKEN` referenced in CI",
       "**Default / protected branches**: Default branch `main`; protected via rulesets; treat `main` as protected despite no classic branch-protection entry",
       "**CI/CD deploy targets**: npm trusted publishing (OIDC) via `.github/workflows/npm-publish.yaml` in the `npm Publish` GitHub Actions environment; PyPI publishing via `.github/workflows/pypi-publish.yaml`; both scoped to assistant-ui/assistant-ui only",
       "**Network posture**: None configured",

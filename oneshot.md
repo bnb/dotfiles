@@ -47,6 +47,10 @@ no casks. apt first, `APT_PACKAGES` in [setup/linux.sh](./setup/linux.sh) (`curl
 
 no `python3`, `git` or `git-lfs` from brew here: apt already provides them. `fnm` is the one node version manager, since it's the one `~/.zshrc` turns on here. zsh gets set as the login shell, but only if it isn't already, and it's added to `/etc/shells` first because `chsh` refuses a shell that isn't listed there.
 
+### work formulae (both platforms)
+
+`WORK_FORMULAE` in [setup/lib/common.sh](./setup/lib/common.sh), only on a machine with `~/GitHub/assistant-ui`. right now that's `infisical`, where the work apps get their development values from. `config:infisical` signs it in (step 8 below).
+
 ### cargo crates (both platforms)
 
 `CARGO_CRATES` in [setup/lib/common.sh](./setup/lib/common.sh), installed with `cargo install --locked` once brew has put `rust` on the machine, and skipped if `cargo install --list` already has it. it builds from source, so it's the slowest part of the run. the binaries land in `~/.cargo/bin`, which brew's rust doesn't put on `$PATH` (rustup would), so [configs/zsh/rust/cargo.sh](./configs/zsh/rust/cargo.sh) does.
@@ -81,14 +85,15 @@ Roughly in the order I do it:
 5. **`config:ai-github login`**: log in the GitHub automation account that Claude Code uses instead of mine outside work sessions. sign the browser into the *automation* account before entering the code, since the code authorizes whichever account the browser is signed into. it points Claude Code at that account once it's done. see [configs/ai](./configs/ai/README.md).
 6. **`config:ai-tangled login`**: the same for Tangled, as @bot.bnb.im. the browser goes to the bot's PDS to sign in as it. `tg auth login bnb.im` logs me in too; the `tg` config pins my account, so the terminal stays me whichever logged in last.
 7. **`opencode auth login`**: authenticate opencode against a model provider; it's installed by brew but can't do anything until it has credentials, and those are per-machine and secret, so they never live in this repo.
-8. **switch this repo's remote to SSH** if I plan to push from the machine; `setup.sh` clones over HTTPS so it works before any of the above exists.
-9. **sign into everything**: Slack, Discord, Spotify, Zoom, Arc, Chrome Canary, VS Code Insiders (settings sync does the rest).
-10. **App Store apps**: homebrew can't install these, so they're manual. anything I've bought rather than brewed lives there.
-11. **Docker Desktop**: has to be opened once to finish its own install and grant its privileged helper.
-12. **Karabiner-Elements**: needs input-monitoring permission in System Settings, then its own config imported.
-13. **macOS system settings**: the trackpad/keyboard/dock tweaks I redo from memory every time. `setup.sh` only handles the one I keep forgetting (`DSDontWriteNetworkStores`, which stops `.DS_Store` files appearing on network shares).
-14. **Television's desktop app**: download it from [dl.todesktop.com](https://dl.todesktop.com/260923p52umxx/mac/dmg/arm64) (Apple Silicon only), then paste the link `tv links` prints into its connect screen. it updates itself after that.
-15. **[the Stream Deck profile](./configs/streamdeck)**: import it from the Stream Deck app; there's no CLI for it.
+8. **`config:infisical`**, on a machine with `~/GitHub/assistant-ui`: signs the Infisical CLI in with my work account (pick Infisical Cloud (US) when it asks), saved as the `assistant-ui` login profile, and binds that directory to it. commands under it use that login even if another Infisical profile is the default.
+9. **switch this repo's remote to SSH** if I plan to push from the machine; `setup.sh` clones over HTTPS so it works before any of the above exists.
+10. **sign into everything**: Slack, Discord, Spotify, Zoom, Arc, Chrome Canary, VS Code Insiders (settings sync does the rest).
+11. **App Store apps**: homebrew can't install these, so they're manual. anything I've bought rather than brewed lives there.
+12. **Docker Desktop**: has to be opened once to finish its own install and grant its privileged helper.
+13. **Karabiner-Elements**: needs input-monitoring permission in System Settings, then its own config imported.
+14. **macOS system settings**: the trackpad/keyboard/dock tweaks I redo from memory every time. `setup.sh` only handles the one I keep forgetting (`DSDontWriteNetworkStores`, which stops `.DS_Store` files appearing on network shares).
+15. **Television's desktop app**: download it from [dl.todesktop.com](https://dl.todesktop.com/260923p52umxx/mac/dmg/arm64) (Apple Silicon only), then paste the link `tv links` prints into its connect screen. it updates itself after that.
+16. **[the Stream Deck profile](./configs/streamdeck)**: import it from the Stream Deck app; there's no CLI for it.
 
 ## upgrading an old WSL box
 
