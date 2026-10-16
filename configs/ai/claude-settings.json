@@ -5,11 +5,44 @@
   },
   "includeGitInstructions": false,
   "permissions": {
+    "allow": [
+      "Bash(git worktree remove *)",
+      "Bash(git branch -d *)",
+      "Bash(git stash drop *)",
+      "Bash(cargo clean*)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh api graphql *resolveReviewThread*)"
+    ],
     "ask": [
       "Bash(git push *)"
     ],
     "deny": [
       "Bash(git commit *--no-verify*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/no-em-dashes.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/no-secret-reads.py\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
