@@ -1028,13 +1028,19 @@ link_ai_skills() {
 }
 
 # Settings that enforce rules instructions.md can only ask for: no attribution
-# lines, none of Claude Code's own git instructions, and pushes asking first
-# (configs/ai/claude-settings.json, and configs/ai/codex-git.rules for Codex).
-# Added to ~/.claude/settings.json: lists gain the missing entries, and a key
-# already set to something else is left alone. Entries in RETIRED were mine
-# once and get taken out. clauth copies these keys into work sessions too.
+# lines, none of Claude Code's own git instructions, pushes asking first,
+# cleanup steps that don't, and hooks refusing em dashes and secret reads
+# (configs/ai/claude-settings.json and configs/ai/hooks, and
+# configs/ai/codex-git.rules for Codex). Added to ~/.claude/settings.json:
+# lists gain the missing entries, and a key already set to something else is
+# left alone. Entries in RETIRED were mine once and get taken out. clauth
+# copies these keys into work sessions too.
 enforce_ai_rules() {
   log_step "adding my guardrails to Claude Code's settings"
+  for hook in "$DOTFILES_DIR"/configs/ai/hooks/*.py
+  do
+    link_dotfile "configs/ai/hooks/${hook##*/}" "$HOME/.claude/hooks/${hook##*/}" || true
+  done
   PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
     python3 - "$HOME/.claude/settings.json" "$DOTFILES_DIR/configs/ai/claude-settings.json" <<'PY' || record_failure "couldn't update ~/.claude/settings.json"
 import json
