@@ -1048,14 +1048,20 @@ enforce_ai_rules() {
   PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
     python3 - "$HOME/.claude/settings.json" "$DOTFILES_DIR/configs/ai/claude-settings.json" <<'PY' || record_failure "couldn't update ~/.claude/settings.json"
 import json
+import os
 import sys
 from config_file import read_json, write_json
 
 path, ours = sys.argv[1:]
 settings = read_json(path)
 
-# the guardrails that kept agents out of worktrees, before they used riftri
-RETIRED = {"ask": ["Bash(git worktree add *)"], "deny": ["Agent(isolation:worktree)"]}
+# the guardrails that kept agents out of worktrees, before they used riftri,
+# and a repo-cleanup rule whose leading wildcard matched any python3 command
+RETIRED = {
+    "ask": ["Bash(git worktree add *)"],
+    "deny": ["Agent(isolation:worktree)"],
+    "allow": ["Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)"],
+}
 
 
 def retire(permissions):
@@ -1087,8 +1093,10 @@ def merge(current, wanted):
     return changed
 
 
+# rules name scripts by absolute path, so a wildcard can't stand in for it
+wanted = json.loads(json.dumps(read_json(ours)).replace("$HOME", os.path.expanduser("~")))
 retired = isinstance(settings.get("permissions"), dict) and retire(settings["permissions"])
-if merge(settings, read_json(ours)) or retired:
+if merge(settings, wanted) or retired:
     write_json(path, settings)
     print("updated")
 else:

@@ -87,6 +87,22 @@ class Fixture(unittest.TestCase):
         unmerged = self.worktree("unmerged")
         commit(unmerged, "c")
         idle_build = cargo_target(unmerged, age=7200)
+        # a cargo tag on a tracked dir or one git doesn't ignore isn't build output
+        tracked = Path(dirty, "vendored")
+        tracked.mkdir()
+        Path(tracked, "CACHEDIR.TAG").write_text(Path(idle_build, "CACHEDIR.TAG").read_text())
+        sh(dirty, "git", "add", "vendored")
+        sh(dirty, "git", "commit", "-qm", "vendored")
+        forced = cargo_target(Path(dirty, "sub"), age=7200)
+        Path(forced, "keep.rs").write_text("tracked")
+        sh(dirty, "git", "add", "-f", "sub/target/keep.rs")
+        sh(dirty, "git", "commit", "-qm", "forced")
+        unsigned = Path(dirty, "other", "target")
+        unsigned.mkdir(parents=True)
+        Path(unsigned, "CACHEDIR.TAG").write_text("# created by cargo, but not cargo's tag\n")
+        unignored = Path(dirty, "notes")
+        unignored.mkdir()
+        Path(unignored, "CACHEDIR.TAG").write_text(Path(idle_build, "CACHEDIR.TAG").read_text())
 
         fresh = self.worktree("fresh")
         fresh_build = cargo_target(fresh)
@@ -133,6 +149,10 @@ class Fixture(unittest.TestCase):
         }
         actual = {k: items[k]["action"] for k in expected}
         self.assertEqual(actual, expected, {k: items[k]["why"] for k in expected if actual[k] != expected[k]})
+        self.assertNotIn(str(tracked), items)
+        self.assertNotIn(str(unignored), items)
+        self.assertNotIn(str(forced), items)
+        self.assertNotIn(str(unsigned), items)
         self.assertEqual(items[str(review)]["ignored"], [".env.local", "local.db (same in main checkout)"])
         self.assertIn("1 commit not in origin/main, not on origin", items[str(unmerged)]["why"])
         self.assertIn("isn't running", items[str(locked)]["why"])

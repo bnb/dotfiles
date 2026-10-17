@@ -10,7 +10,8 @@
       "Bash(git branch -d *)",
       "Bash(git stash drop *)",
       "Bash(cargo clean*)",
-    "Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)",
+    "Bash($HOME/.claude/skills/repo-cleanup/scripts/cleanup.py *)",
+    "Bash($HOME/.agents/skills/repo-cleanup/scripts/cleanup.py *)",
       "Bash(gh pr create *)",
       "Bash(gh pr merge *)",
       "Bash(gh api graphql *resolveReviewThread*)"
