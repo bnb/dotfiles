@@ -191,7 +191,15 @@ class Repo:
             )
             if ref and git(self.main, "rev-parse", "--verify", "--quiet", ref)
         )
-        self.first_parent = set((git(self.main, "rev-list", "--first-parent", "--max-count=50000", self.default) or "").split())
+        # work merged into a local default branch that hasn't been pushed yet is
+        # just as safe to drop, for repos that merge locally and push later
+        local = self.default.removeprefix("origin/")
+        self.targets = [self.default]
+        if local != self.default and git(self.main, "rev-parse", "--verify", "--quiet", f"refs/heads/{local}"):
+            self.targets.append(local)
+        self.first_parent = set()
+        for ref in self.targets:
+            self.first_parent |= set((git(self.main, "rev-list", "--first-parent", "--max-count=50000", ref) or "").split())
         self.pr_heads = self._merged_pr_heads()
 
     def _merged_pr_heads(self):
@@ -211,12 +219,14 @@ class Repo:
         """("merged" | "empty" | "unmerged", why)."""
         if branch and head in self.pr_heads.get(branch, ()):
             return "merged", "PR merged"
-        if git(self.main, "merge-base", "--is-ancestor", head, self.default) is None:
+        merged_into = next((ref for ref in self.targets
+                            if git(self.main, "merge-base", "--is-ancestor", head, ref) is not None), None)
+        if merged_into is None:
             ahead = int(git(self.main, "rev-list", "--count", f"{self.default}..{head}"))
             return "unmerged", f"{plural(ahead, 'commit')} not in {self.default}, {self.pushed(head, branch)}"
         if head in self.first_parent:
             return "empty", "no commits of its own"
-        return "merged", f"merged into {self.default}"
+        return "merged", f"merged into {merged_into}"
 
     def pushed(self, head, branch):
         """Whether origin has this work, which matters more than merged when
