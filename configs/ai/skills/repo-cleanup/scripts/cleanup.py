@@ -117,9 +117,20 @@ def lock_reason(reason):
     return f"locked ({reason})" if reason else "locked"
 
 
+CARGO_TAG = "Signature: 8a477f597d28d172789f06886806bc55"
+
+
+def is_cargo_target(root, here):
+    """Cargo's CACHEDIR.TAG alone could be planted anywhere, so also require
+    git to ignore the dir, which it won't while anything inside is tracked."""
+    tag = (here / "CACHEDIR.TAG").read_text(errors="ignore")
+    return (tag.startswith(CARGO_TAG) and "cargo" in tag
+            and git(root, "check-ignore", "-q", f"{here.relative_to(root)}/") is not None)
+
+
 def cargo_targets(root):
-    """Cargo target dirs (marked by cargo's CACHEDIR.TAG) a few levels down,
-    skipping node_modules and nested worktrees or repos."""
+    """Cargo target dirs a few levels down, skipping node_modules and nested
+    worktrees or repos."""
     found = []
     root = Path(root)
     for dirpath, dirnames, filenames in os.walk(root):
@@ -127,7 +138,7 @@ def cargo_targets(root):
         if here != root and (".git" in dirnames or ".git" in filenames):
             dirnames.clear()
             continue
-        if "CACHEDIR.TAG" in filenames and "cargo" in (here / "CACHEDIR.TAG").read_text(errors="ignore"):
+        if "CACHEDIR.TAG" in filenames and here != root and is_cargo_target(root, here):
             found.append(here)
             dirnames.clear()
             continue

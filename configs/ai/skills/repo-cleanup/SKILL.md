@@ -9,7 +9,7 @@ description: Clears out what finished work leaves in a git repo (merged worktree
 
 ## steps
 
-1. **survey.** run `python3 <this skill's dir>/scripts/cleanup.py <repo>`, where `<repo>` is any path inside it (a worktree works too). it fetches, then groups everything into remove, clean build output, review, and keep, with a reason for each. pass several repos to check them in one go. any other process sitting in a worktree keeps it. your own shell and session don't count, so a merged worktree you're in goes too: run later commands from the main checkout.
+1. **survey.** run `<this skill's dir>/scripts/cleanup.py <repo>` (it's executable, so no `python3` in front), where `<repo>` is any path inside it (a worktree works too). it fetches, then groups everything into remove, clean build output, review, and keep, with a reason for each. pass several repos to check them in one go. any other process sitting in a worktree keeps it. your own shell and session don't count, so a merged worktree you're in goes too: run later commands from the main checkout.
 2. **review.** items under "review" are merged and clean but have ignored files that aren't build output, like an `.env.local` or a local database. look at what they are (key names only for env files, never values) and whether anything there exists nowhere else. a file marked "same in main checkout" is an identical copy, so losing it costs nothing. if it's all disposable, add `--include <path>` for that worktree.
 3. **apply.** rerun with `--apply` and any `--include`s. it checks each item again right before acting, skips anything that changed since the survey, and prints how much it removed.
 4. **the rest is yours**, since the script can't tell who made what:
