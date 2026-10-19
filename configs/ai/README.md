@@ -39,6 +39,7 @@ setup.sh installs these for both agents with the [Skills CLI](https://skills.sh)
 
 my own skills live in [skills/](./skills): rules from my instructions that only matter in some projects, or that need a script, so they load when needed instead of in every session. setup.sh links each skill's files into `~/.agents/skills` and the folder into `~/.claude/skills`.
 
+- [1password-retry](./skills/1password-retry/SKILL.md): what agents do when a commit or push fails because nobody saw 1Password's prompt in time. its [script](./skills/1password-retry/scripts/wait_for_me.py) posts a notification and waits until I'm back at the Mac, and the agent reruns the command after it. `python3 -m unittest discover -s configs/ai/skills/1password-retry/scripts` runs its tests.
 - [atproto](./skills/atproto/SKILL.md): conventions for AT Protocol apps.
 - [new-project](./skills/new-project/SKILL.md): my default stack for a new project.
 - [repo-cleanup](./skills/repo-cleanup/SKILL.md): what agents run when they finish work in a repo. its [script](./skills/repo-cleanup/scripts/cleanup.py) removes merged worktrees and branches and Rust build output nothing's using, and lists everything it keeps and why. `python3 -m unittest discover -s configs/ai/skills/repo-cleanup/scripts` runs its tests.
@@ -132,7 +133,7 @@ every file gets backed up to `<file>.backup.<timestamp>` before any change, and 
 
 - **the bots need access.** agents push and open PRs as them, so each bot needs write access to any repo the agents work in outside work sessions: as a collaborator or through an org team on GitHub, as a collaborator on Tangled. that includes my own private repos.
 - **restart running sessions** after `apply` or `remove`. both agents read their config at startup. the same goes for the Claude desktop app itself, after those, a toggle, or `clauth switch`.
-- **1Password asks before it uses the bot's keys** for an app it hasn't approved yet, and an agent's commit or push waits on that approval. how long an approval lasts is in 1Password > Settings > Developer.
+- **1Password asks before it uses the bot's keys** for an app it hasn't approved yet, and an agent's commit or push waits on that approval. how long an approval lasts is in 1Password > Settings > Developer. an unanswered prompt gives up after about a minute and the command fails, so agents follow [1password-retry](./skills/1password-retry/SKILL.md) and try again once I'm back. `ssh-add -l` in an agent's shell asks macOS's own agent, not 1Password's, so it always says there are no identities.
 - **only git uses the bot's SSH key.** a plain `ssh git@github.com` from an agent still reads `~/.ssh/config`, and so authenticates as me.
 - **a `GH_TOKEN` or `GITHUB_TOKEN` in the environment beats all of this** for gh. gh prefers either one over any config directory, and an agent started from a shell that exports one inherits it. `status` warns about it.
 - **`clauth start --isolated`** starts from an empty settings file, but clauth still adds the profile's own `[env]`. with a `work` profile, that's where all of these live, so an isolated session gets the same accounts as any other on its profile. without one, they're only in `~/.claude/settings.json`, so isolated sessions use my own accounts.
