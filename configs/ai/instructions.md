@@ -38,7 +38,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 
 - **never commit without asking me with options first**, unless I explicitly ask for a commit. when a PR will follow, put its title and body in the same message so one reply covers both.
 - **if a goal needs repeated commits, ask me how to handle it.**
-- commit with whatever identity git has configured here (per-forge bot accounts, separate from mine; same rules apply unless I say otherwise). signing goes through 1Password and sometimes fails. if signing or ssh auth fails, tell me once, then wait in the background until `ssh-add -l` lists a key and rerun the same command yourself.
+- commit with whatever identity git has configured here (per-forge bot accounts, separate from mine; same rules apply unless I say otherwise). signing and ssh go through 1Password, which gives up after about a minute when I don't see its prompt. when that happens, follow the `1password-retry` skill: tell me once, then wait in the background until I'm back and rerun the command yourself. never poll `ssh-add -l` for it.
 - before the first commit, push, or PR in a session, check that `git config user.email`, `commit.gpgsign`, and `gh auth status` match the account this session should use, and that the worktree has deps installed so hooks run. if anything's off, stop and tell me.
 - fixes go in new commits on top. no amending or squashing, and no rebasing or force-pushing unless I say "rebase" or "restack", which covers those branches and the `--force-with-lease` push after. otherwise resolve conflicts by merging the base in.
 - don't bypass hooks or signing on commits or pushes (`--no-verify`, `core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`). if one fails, fix the cause or tell me.
