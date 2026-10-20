@@ -9,12 +9,11 @@
       "Bash(git worktree remove *)",
       "Bash(git branch -d *)",
       "Bash(git stash drop *)",
-      "Bash(cargo clean*)",
-    "Bash($HOME/.claude/skills/repo-cleanup/scripts/cleanup.py *)",
-    "Bash($HOME/.agents/skills/repo-cleanup/scripts/cleanup.py *)",
+      "Bash(cargo clean)",
+      "Bash($HOME/.claude/skills/repo-cleanup/scripts/cleanup.py *)",
+      "Bash($HOME/.agents/skills/repo-cleanup/scripts/cleanup.py *)",
       "Bash(gh pr create *)",
-      "Bash(gh pr merge *)",
-      "Bash(gh api graphql *resolveReviewThread*)"
+      "Bash(gh pr merge *)"
     ],
     "ask": [
       "Bash(git push *)"
@@ -41,6 +40,16 @@
           {
             "type": "command",
             "command": "python3 \"$HOME/.claude/hooks/no-secret-reads.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/no-forced-git.py\"",
             "timeout": 10
           }
         ]

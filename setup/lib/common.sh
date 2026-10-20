@@ -605,15 +605,17 @@ pnpm_global_install_batch() {
 # through `pnpm dlx`, so this has to run after the pnpm globals. A global
 # install keeps one copy in ~/.agents/skills, which Codex reads as is, and
 # symlinks it into ~/.claude/skills. DO_NOT_TRACK turns off the CLI's telemetry
-# and its third-party security-audit lookups.
-AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop assistant-ui/riftri"
+# and its third-party security-audit lookups. `source@skill` installs just that
+# one skill from a repo that ships many.
+AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop assistant-ui/riftri github/awesome-copilot@conventional-commit"
 
-# usage: agent_skills_install_batch blader/humanizer
+# usage: agent_skills_install_batch blader/humanizer github/awesome-copilot@conventional-commit
 #
-# Always returns 0, same as brew_install_batch. A source that's already
-# installed is skipped; `pnpm dlx skills update -g` is what updates them.
+# Always returns 0, same as brew_install_batch. A source (or a source@skill's
+# skill) that's already installed is skipped; `pnpm dlx skills update -g` is
+# what updates them.
 agent_skills_install_batch() {
-  local installed src
+  local installed src skill installed_as
 
   if ! command -v pnpm >/dev/null 2>&1
   then
@@ -625,14 +627,24 @@ agent_skills_install_batch() {
 
   for src in "$@"
   do
-    if printf '%s\n' "$installed" | grep -Fq "\"source\": \"$src\""
+    skill=""
+    installed_as="\"source\": \"$src\""
+    case "$src" in
+      *@*)
+        skill="${src#*@}"
+        installed_as="\"name\": \"$skill\""
+        ;;
+    esac
+
+    if printf '%s\n' "$installed" | grep -Fq "$installed_as"
     then
       log_info "already installed (skills): $src"
       continue
     fi
 
     log_step "skills add $src"
-    if ! DO_NOT_TRACK=1 pnpm dlx skills add "$src" --global --agent claude-code --agent codex --yes
+    # `skills add repo@skill` lists the whole repo instead, so split it into --skill
+    if ! DO_NOT_TRACK=1 pnpm dlx skills add "${src%@*}" ${skill:+--skill "$skill"} --global --agent claude-code --agent codex --yes
     then
       record_failure "skills add $src"
     fi
@@ -1056,11 +1068,17 @@ path, ours = sys.argv[1:]
 settings = read_json(path)
 
 # the guardrails that kept agents out of worktrees, before they used riftri,
-# and a repo-cleanup rule whose leading wildcard matched any python3 command
+# a repo-cleanup rule whose leading wildcard matched any python3 command, a
+# cargo clean rule that also allowed --target-dir anywhere, and a graphql rule
+# that allowed any query mentioning resolveReviewThread
 RETIRED = {
     "ask": ["Bash(git worktree add *)"],
     "deny": ["Agent(isolation:worktree)"],
-    "allow": ["Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)"],
+    "allow": [
+        "Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)",
+        "Bash(cargo clean*)",
+        "Bash(gh api graphql *resolveReviewThread*)",
+    ],
 }
 
 

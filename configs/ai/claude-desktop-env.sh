@@ -12,10 +12,15 @@
 # `toggle:ai-github` and `toggle:ai-tangled` (after an app restart). Nothing
 # else ever has that variable set: terminals, the app's own terminal panel,
 # and Claude Code's shells skip this.
+#
+# ANTHROPIC_* keys are left out. clauth writes an API-endpoint profile's base
+# URL into that block, and the app would hold on to it until a restart, long
+# after clauth has switched back to an OAuth account.
 
 if [[ -n "$CLAUDE_DESKTOP_RESOLVING_ENVIRONMENT" && -r "$HOME/.claude/settings.json" ]] && (( $+commands[jq] ))
 then
   eval "$(jq -r '.env // {} | to_entries[]
     | select(.key | test("^[A-Za-z_][A-Za-z0-9_]*$"))
+    | select(.key | startswith("ANTHROPIC_") | not)
     | "export \(.key)=\(.value | tostring | @sh)"' "$HOME/.claude/settings.json")"
 fi

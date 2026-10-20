@@ -272,6 +272,13 @@ class Fixture(unittest.TestCase):
         self.assertFalse(merged.exists())
         self.assertIn("freed 3M", out)
 
+    def test_merged_into_unpushed_local_main(self):
+        local = self.worktree("local")
+        commit(local, "a")
+        sh(self.repo, "git", "merge", "-q", "--no-ff", "-m", "merge local", "local")
+        items, _ = self.run_script()
+        self.assertEqual((items[str(local)]["action"], items[str(local)]["why"]), ("remove", "merged into main"))
+
     def test_merged_pr_head_counts_as_merged(self):
         squashed = self.worktree("squashed")
         commit(squashed, "a")
