@@ -5,11 +5,9 @@
 # bundled short ones (-df). the deny rules in claude-settings.json stay as a
 # second layer, for when this can't run.
 import json
-import re
 import shlex
 import sys
 
-SEGMENT = re.compile(r"\|\|?|&&|;|\n")
 GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env", "--attr-source"}
 # per command: short options that take the next word as their value when
 # nothing's attached, and ones whose value can only be attached
@@ -45,11 +43,29 @@ def has(args, values, long, short):
     )
 
 
-def forced(segment):
+# shell operators, subshell parens and backticks end a command, but only
+# outside quotes, so a "fix(ui): ..." message stays one word
+OPERATORS = "();<>|&`\n"
+
+
+def segments(command):
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=OPERATORS)
+    lexer.whitespace = " \t\r"
+    lexer.whitespace_split = True
+    words = []
     try:
-        words = shlex.split(segment)
-    except ValueError:
-        words = segment.split()
+        for token in lexer:
+            if set(token) <= set(OPERATORS):
+                yield words
+                words = []
+            else:
+                words.append(token)
+    except ValueError:  # unbalanced quotes
+        words += lexer.token.split()
+    yield words
+
+
+def forced(words):
     while words and ("=" in words[0] or words[0] in {"sudo", "command", "env"}):
         words.pop(0)
     if not words:
@@ -73,7 +89,7 @@ def forced(segment):
 def main():
     try:
         command = (json.load(sys.stdin).get("tool_input") or {}).get("command") or ""
-        if not any(forced(s) for s in SEGMENT.split(command)):
+        if not any(forced(words) for words in segments(command)):
             return 0
     except Exception as error:
         # fail closed: a command this can't read could be one it should refuse
