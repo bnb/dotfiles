@@ -1016,6 +1016,7 @@ link_claude_skill() {
 # My own skills in configs/ai/skills: the rules from instructions.md that only
 # matter in some projects, so they load when needed instead of every session.
 # Every file gets linked, so a skill's scripts come along with its SKILL.md.
+# Build leftovers (node_modules, coverage, __pycache__) stay behind.
 link_ai_skills() {
   local skill name file
 
@@ -1025,7 +1026,7 @@ link_ai_skills() {
     while IFS= read -r file
     do
       link_dotfile "configs/ai/skills/$name/$file" "$HOME/.agents/skills/$name/$file" || true
-    done < <(cd "$skill" && find . -name __pycache__ -prune -o -type f -print | sed 's#^\./##')
+    done < <(cd "$skill" && find . \( -name __pycache__ -o -name node_modules -o -name coverage \) -prune -o -type f -print | sed 's#^\./##')
     link_claude_skill "$name"
   done
   return 0
