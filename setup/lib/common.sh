@@ -1045,7 +1045,8 @@ link_ai_skills() {
 
 # Settings that enforce rules instructions.md can only ask for: no attribution
 # lines, none of Claude Code's own git instructions, pushes asking first,
-# cleanup steps that don't, and hooks refusing em dashes and secret reads
+# cleanup steps that don't, and hooks refusing em dashes, secret reads, and
+# forced cleanup or hook-skipping commits
 # (configs/ai/claude-settings.json and configs/ai/hooks, and
 # configs/ai/codex-git.rules for Codex). Added to ~/.claude/settings.json:
 # lists gain the missing entries, and a key already set to something else is
