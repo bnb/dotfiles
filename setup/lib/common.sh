@@ -1068,11 +1068,17 @@ path, ours = sys.argv[1:]
 settings = read_json(path)
 
 # the guardrails that kept agents out of worktrees, before they used riftri,
-# and a repo-cleanup rule whose leading wildcard matched any python3 command
+# a repo-cleanup rule whose leading wildcard matched any python3 command, a
+# cargo clean rule that also allowed --target-dir anywhere, and a graphql rule
+# that allowed any query mentioning resolveReviewThread
 RETIRED = {
     "ask": ["Bash(git worktree add *)"],
     "deny": ["Agent(isolation:worktree)"],
-    "allow": ["Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)"],
+    "allow": [
+        "Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)",
+        "Bash(cargo clean*)",
+        "Bash(gh api graphql *resolveReviewThread*)",
+    ],
 }
 
 
