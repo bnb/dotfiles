@@ -19,13 +19,7 @@
       "Bash(git push *)"
     ],
     "deny": [
-      "Bash(git commit *--no-verify*)",
-      "Bash(git worktree remove *--force*)",
-      "Bash(git worktree remove* -f*)",
-      "Bash(git branch -d *--force*)",
-      "Bash(git branch -d* -f*)",
-      "Bash(git branch -d* -D*)",
-      "Bash(gh pr merge *--admin*)"
+      "Bash(git commit *--no-verify*)"
     ]
   },
   "hooks": {
@@ -46,6 +40,16 @@
           {
             "type": "command",
             "command": "python3 \"$HOME/.claude/hooks/no-secret-reads.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/no-forced-git.py\"",
             "timeout": 10
           }
         ]
