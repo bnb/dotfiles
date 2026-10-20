@@ -605,15 +605,17 @@ pnpm_global_install_batch() {
 # through `pnpm dlx`, so this has to run after the pnpm globals. A global
 # install keeps one copy in ~/.agents/skills, which Codex reads as is, and
 # symlinks it into ~/.claude/skills. DO_NOT_TRACK turns off the CLI's telemetry
-# and its third-party security-audit lookups.
-AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop assistant-ui/riftri"
+# and its third-party security-audit lookups. `source@skill` installs just that
+# one skill from a repo that ships many.
+AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop assistant-ui/riftri github/awesome-copilot@conventional-commit"
 
-# usage: agent_skills_install_batch blader/humanizer
+# usage: agent_skills_install_batch blader/humanizer github/awesome-copilot@conventional-commit
 #
-# Always returns 0, same as brew_install_batch. A source that's already
-# installed is skipped; `pnpm dlx skills update -g` is what updates them.
+# Always returns 0, same as brew_install_batch. A source (or a source@skill's
+# skill) that's already installed is skipped; `pnpm dlx skills update -g` is
+# what updates them.
 agent_skills_install_batch() {
-  local installed src
+  local installed src skill installed_as
 
   if ! command -v pnpm >/dev/null 2>&1
   then
@@ -625,14 +627,24 @@ agent_skills_install_batch() {
 
   for src in "$@"
   do
-    if printf '%s\n' "$installed" | grep -Fq "\"source\": \"$src\""
+    skill=""
+    installed_as="\"source\": \"$src\""
+    case "$src" in
+      *@*)
+        skill="${src#*@}"
+        installed_as="\"name\": \"$skill\""
+        ;;
+    esac
+
+    if printf '%s\n' "$installed" | grep -Fq "$installed_as"
     then
       log_info "already installed (skills): $src"
       continue
     fi
 
     log_step "skills add $src"
-    if ! DO_NOT_TRACK=1 pnpm dlx skills add "$src" --global --agent claude-code --agent codex --yes
+    # `skills add repo@skill` lists the whole repo instead, so split it into --skill
+    if ! DO_NOT_TRACK=1 pnpm dlx skills add "${src%@*}" ${skill:+--skill "$skill"} --global --agent claude-code --agent codex --yes
     then
       record_failure "skills add $src"
     fi
@@ -1015,13 +1027,17 @@ link_claude_skill() {
 
 # My own skills in configs/ai/skills: the rules from instructions.md that only
 # matter in some projects, so they load when needed instead of every session.
+# Every file gets linked, so a skill's scripts come along with its SKILL.md.
 link_ai_skills() {
-  local skill name
+  local skill name file
 
   for skill in "$DOTFILES_DIR"/configs/ai/skills/*/
   do
     name="$(basename "$skill")"
-    link_dotfile "configs/ai/skills/$name/SKILL.md" "$HOME/.agents/skills/$name/SKILL.md" || continue
+    while IFS= read -r file
+    do
+      link_dotfile "configs/ai/skills/$name/$file" "$HOME/.agents/skills/$name/$file" || true
+    done < <(cd "$skill" && find . -name __pycache__ -prune -o -type f -print | sed 's#^\./##')
     link_claude_skill "$name"
   done
   return 0
@@ -1044,14 +1060,20 @@ enforce_ai_rules() {
   PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
     python3 - "$HOME/.claude/settings.json" "$DOTFILES_DIR/configs/ai/claude-settings.json" <<'PY' || record_failure "couldn't update ~/.claude/settings.json"
 import json
+import os
 import sys
 from config_file import read_json, write_json
 
 path, ours = sys.argv[1:]
 settings = read_json(path)
 
-# the guardrails that kept agents out of worktrees, before they used riftri
-RETIRED = {"ask": ["Bash(git worktree add *)"], "deny": ["Agent(isolation:worktree)"]}
+# the guardrails that kept agents out of worktrees, before they used riftri,
+# and a repo-cleanup rule whose leading wildcard matched any python3 command
+RETIRED = {
+    "ask": ["Bash(git worktree add *)"],
+    "deny": ["Agent(isolation:worktree)"],
+    "allow": ["Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)"],
+}
 
 
 def retire(permissions):
@@ -1083,8 +1105,10 @@ def merge(current, wanted):
     return changed
 
 
+# rules name scripts by absolute path, so a wildcard can't stand in for it
+wanted = json.loads(json.dumps(read_json(ours)).replace("$HOME", os.path.expanduser("~")))
 retired = isinstance(settings.get("permissions"), dict) and retire(settings["permissions"])
-if merge(settings, read_json(ours)) or retired:
+if merge(settings, wanted) or retired:
     write_json(path, settings)
     print("updated")
 else:
