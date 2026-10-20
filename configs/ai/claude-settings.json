@@ -19,7 +19,13 @@
       "Bash(git push *)"
     ],
     "deny": [
-      "Bash(git commit *--no-verify*)"
+      "Bash(git commit *--no-verify*)",
+      "Bash(git worktree remove *--force*)",
+      "Bash(git worktree remove* -f*)",
+      "Bash(git branch -d *--force*)",
+      "Bash(git branch -d* -f*)",
+      "Bash(git branch -d* -D*)",
+      "Bash(gh pr merge *--admin*)"
     ]
   },
   "hooks": {
