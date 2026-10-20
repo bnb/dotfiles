@@ -29,10 +29,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
   - "merge it" or "merge it into main": for an open PR, merge it, confirm it landed, then clean up. in a repo with no PR flow, `merge --no-ff` into local main and clean up, and list that first when you offer commit options.
   - "resume": pick up this session's unfinished work (todos, git status, background tasks) without asking what it was. after a usage limit, continue exactly where you stopped.
   - "done" after you gave me steps: check they took, then keep going.
-- wait on background work with the harness's notifications or Monitor, one waiter per job. no `pgrep -f` or sleep polling loops. stop dev servers, background jobs, and child processes you started once they're done or superseded, and run one heavy Rust job (coverage, mutation, bench) at a time.
-- Rust `target/` dirs eat my disk (every worktree builds its own, and they reach 10 to 100G). be aggressive, since build artifacts are cheap to rebuild:
-  - run `cargo clean` in any worktree you built in before you finish with it.
-  - before a Rust build, check `df -h /`. under 100G free, `cargo clean` every project under `~/GitHub` whose `target/` hasn't been built in 3 days, and tell me how much that freed.
+- wait on background work with the harness's notifications or Monitor, one waiter per job. no `pgrep -f` or sleep polling loops. stop dev servers, background jobs, and child processes you started once they're done or superseded.
 
 ## git
 
@@ -40,7 +37,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - **if a goal needs repeated commits, ask me how to handle it.**
 - commit with whatever identity git has configured here (per-forge bot accounts, separate from mine; same rules apply unless I say otherwise). signing and ssh go through 1Password, which gives up after about a minute when I don't see its prompt. when that happens, follow the `1password-retry` skill: tell me once, then wait in the background until I'm back and rerun the command yourself. never poll `ssh-add -l` for it.
 - before the first commit, push, or PR in a session, check that `git config user.email`, `commit.gpgsign`, and `gh auth status` match the account this session should use, and that the worktree has deps installed so hooks run. if anything's off, stop and tell me.
-- fixes go in new commits on top. no amending or squashing, and no rebasing or force-pushing unless I say "rebase" or "restack", which covers those branches and the `--force-with-lease` push after. otherwise resolve conflicts by merging the base in.
+- fixes go in new commits on top. no amending or squashing, and no rebasing or force-pushing unless I say "rebase" or "restack" (or "fix conflicts" on a gh stack), which covers those branches and the `--force-with-lease` push after. otherwise resolve conflicts by merging the base in.
 - don't bypass hooks or signing on commits or pushes (`--no-verify`, `core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`). if one fails, fix the cause or tell me.
 - no AI attribution: no `Co-Authored-By` trailers or "Generated with Claude Code" lines, even when a tool says to add one.
 - write commit messages with the `conventional-commit` skill (`type(scope): summary`) in my own repos and in any repo whose standard it is: a commitlint, release-please, or semantic-release config, a CONTRIBUTING rule, or recent `git log` subjects in that shape. PR titles too, where the repo squash-merges or lints them. take only its message format: its workflow commits without asking, and the rules above still win. anywhere else, match the repo's own style.
@@ -56,9 +53,8 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - PR bodies: plain prose listing what was added, changed, and removed, detailed enough to review.
 - in PRs, issues, and replies, link the comments, runs, and source lines you mean instead of describing them. numbers come from a real run I can click through to, preferably the PR's own. state units exactly (GB vs GiB) and what each number measures, and rule out other causes before blaming one. upstream bug reports also get a minimal repro.
 - replies, comments, and messages I ask for come back as paste-ready markdown here. I'll post them.
-- stacked PRs use the `gh` stack plugin. "fix conflicts" or "make it mergeable" means work bottom-up with it, run local checks on each branch, and confirm GitHub shows each PR mergeable before calling it done.
-- CI costs money, so don't push repeatedly for review bots. triage bot comments as blocking or not, confirm a fix by replying with a GitHub suggestion block before pushing, and batch real fixes into one push. after two push rounds on a PR, hand it back to me, unless I said "make the bots/CI happy" (often a /goal): then keep going, one batched push per round, until checks are green and no bot comment blocks. calls only an owner can make still come back to me. expensive suites run on a schedule or `workflow_dispatch`, not every PR.
-- "address feedback": every review comment on the PRs, human and bot. lean toward the suggested change, and tell me what you declined and why.
+- once a PR is open, its reviews, bot comments, CI rounds, and stack follow the `pr-feedback` skill ("address feedback", "make the bots/CI happy", "fix conflicts").
+- expensive suites run on a schedule or `workflow_dispatch`, not every PR.
 
 ## code
 
@@ -71,7 +67,6 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - follow each ecosystem's conventions. when unsure, favor well-maintained open source projects' patterns over code we wrote recently.
 - if a lint or static check could catch a finding, add the check too. move projects off eslint, prettier, or markdownlint to oxlint and oxfmt when I touch them.
 - TypeScript: strict, no `any`, explicit types accurate to the runtime data. shared types live in one place, duplicate shapes merged.
-- Rust: cargo-nextest, clippy, rustc_hash for hash maps, IndexMap over BTreeMap, and hegel for property tests, with a hegel-only coverage run (`-C instrument-coverage`) held to the same thresholds.
 - new code logs where I'd want it when debugging (evlog in JS and TS).
 - names say what, comments say why, and every comment matches what the code does now. when refactoring, keep the true comments and docstrings and fix the ones you made stale. keep the README concise and in sync in the same change.
 - every project has one script each for dev (everything running), check, and deploy or publish, listed in the README. anything I'd paste into a dashboard more than once becomes an idempotent script that skips unchanged items.
@@ -90,19 +85,6 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - a new test must fail when its expectation breaks. break it at least once to check.
 - test behavior from the outside: assert on results, not mock calls, mock as little as possible, and find UI by role, label, or text. exclude code with nothing to test (types, config, re-exports) from coverage instead of mirroring it in a test.
 - flaky tests get a root-cause fix (fake timers, a real hydration signal, deterministic fixtures), never a longer timeout. confirm with repeated runs.
-- every app (native, Electron, browser extension) gets a harness that drives every surface, preferring purpose-fit existing tools. use it, with subagents per feature, to find what's broken.
-
-## UI and design
-
-- polished and cohesive, in the app's existing design language. new things look native, never hacked in, and match neighboring elements' size and height exactly.
-- check UI at phone, narrow-panel, and wide widths and while scrolling, in dev and a production build, and show me before and after screenshots.
-- no flashes, jumps, or jitter. load saved preferences (theme, settings, auth state) before first paint, and keep layout stable as loaders come and go.
-- never block a page on data. render static parts immediately, ghost only dynamic data, and show each result (counts included) as it resolves. startup should feel instant, about 200ms.
-- design every state (loading, empty, error), each with a Storybook story, mobile too. errors look like an expected part of the app and offer the next step.
-- returning users: catch an expired session on load, not on the first click. when navigating between items, never show the previous one's data.
-- when a background check fails, fall back to a sane state (signed out, partial data), not a blocking notice. users never see internal state or diagnostics, and copy never mentions implementation details.
-- design options means several genuinely different variants I can open and compare.
-- accessibility and Lighthouse checks are part of done.
 
 ## writing
 
@@ -118,7 +100,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - `gh` for GitHub (not curl against api.github.com), `tg` for tangled (not curl against its API or the AT Protocol), `railway` for Railway.
 - fnm manages Node through `.node-version`. never let pnpm manage Node (`devEngines.runtime`, `useNodeVersion`, `pnpm env`).
 - `rg` over grep and `fd` over find. both skip .gitignored paths like node_modules.
-- AT Protocol conventions live in the `atproto` skill, and my default stack for new projects in the `new-project` skill.
+- skills hold the rules that only apply to some work: `atproto` for AT Protocol apps, `new-project` for my default stack, `rust` for Rust crates and their `target/` dirs, and `ui` for anything a user sees or clicks (app harnesses included). load the matching one before starting.
 
 ## other people's services
 
