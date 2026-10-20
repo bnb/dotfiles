@@ -11,6 +11,106 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ],
+        "matcher": "^request_user_input$"
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "timeout": 605,
+            "command": "/usr/bin/curl -s -m 600 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook 2>/dev/null || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "command": "/usr/bin/curl -s -o /dev/null -m 2 --unix-socket \"${GODE_HOOK_SOCKET:-$HOME/Library/Application Support/Gode/hooks.sock}\" -H 'Content-Type: application/json' -H 'X-Gode-Hooks: 4' -H \"X-Gode-Terminal: $GODE_TERMINAL\" -H \"X-Gode-Pane: $GODE_PANE\" -H \"X-Gode-Agent: codex\" --data-binary @- http://localhost/codex/hook >/dev/null 2>&1 || true",
+            "type": "command"
+          }
+        ]
       }
     ]
   }
