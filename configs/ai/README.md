@@ -33,6 +33,7 @@ that leaves `~/.claude` to the desktop app, so the global clauth account stays o
 
 setup.sh installs these for both agents with the [Skills CLI](https://skills.sh), from `AGENT_SKILLS` in [setup/lib/common.sh](../../setup/lib/common.sh):
 
+- [conventional-commit](https://github.com/github/awesome-copilot/blob/main/skills/conventional-commit/SKILL.md) is the `type(scope): summary` format my instructions ask for in my own repos and in any repo that already uses it. it's the one skill setup.sh takes from awesome-copilot (`source@skill` in `AGENT_SKILLS`).
 - [humanizer](https://github.com/blader/humanizer) rewrites text that reads as AI-written. my instructions ask for a pass on docs, comments, PR bodies, and commit messages.
 - [install-anti-slop](https://github.com/dmmulroy/anti-slop) vendors dmmulroy's anti-slop Oxlint rules into a repo, or updates a copy that's already there.
 - [riftri-worktrees](https://github.com/assistant-ui/riftri/blob/main/skills/riftri-worktrees/SKILL.md) is how agents make and clean up the [riftri](https://riftri.dev) worktrees my instructions ask for. setup.sh installs the `riftri` CLI itself as a pnpm global.
