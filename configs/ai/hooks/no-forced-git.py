@@ -10,7 +10,7 @@ import shlex
 import sys
 
 SEGMENT = re.compile(r"\|\|?|&&|;|\n")
-GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix"}
+GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env", "--attr-source"}
 # per command: short options that take the next word as their value when
 # nothing's attached, and ones whose value can only be attached
 VALUE, ATTACHED_VALUE = 0, 1
