@@ -9,16 +9,21 @@
       "Bash(git worktree remove *)",
       "Bash(git branch -d *)",
       "Bash(git stash drop *)",
-      "Bash(cargo clean*)",
+      "Bash(cargo clean)",
       "Bash(gh pr create *)",
-      "Bash(gh pr merge *)",
-      "Bash(gh api graphql *resolveReviewThread*)"
+      "Bash(gh pr merge *)"
     ],
     "ask": [
       "Bash(git push *)"
     ],
     "deny": [
-      "Bash(git commit *--no-verify*)"
+      "Bash(git commit *--no-verify*)",
+      "Bash(git worktree remove *--force*)",
+      "Bash(git worktree remove* -f*)",
+      "Bash(git branch -d *--force*)",
+      "Bash(git branch -d* -f*)",
+      "Bash(git branch -d* -D*)",
+      "Bash(gh pr merge *--admin*)"
     ]
   },
   "hooks": {
