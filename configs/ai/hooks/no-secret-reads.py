@@ -4,28 +4,47 @@
 # print only key names (rg -o, awk -F=) still run.
 import json
 import re
+import shlex
 import sys
 
 KEYCHAIN = re.compile(r"\bsecurity\s+find-(?:generic|internet)-password\b[^|;&\n]*\s-[A-Za-z]*[wg][A-Za-z]*\b")
 DUMPERS = {"cat", "bat", "less", "more", "head", "tail", "nl", "strings", "xxd", "hexdump", "od", "tac"}
 SECRET_FILE = re.compile(
     r"\.clauth/profiles/[^\s'\"]*/(?:config\.toml|credentials\.json|session-token\.json)"
-    r"|(?:^|[\s/'\"=])\.env(?:\.(?!example\b|sample\b|template\b|dist\b)[\w.-]+)?(?=$|[\s'\";|&)])"
+    r"|(?:^|[\s/'\"=])\.env(?:\.(?!example\b|sample\b|template\b|dist\b)[\w.-]+)?(?=$|[\s'\";|&)*?\[])"
 )
-SEGMENT = re.compile(r"\|\|?|&&|;|\n")
+# shell operators, subshell parens and backticks end a command, but only
+# outside quotes, so a "fix(ui): ..." message stays one word
+OPERATORS = "();<>|&`\n"
 
 
-def dumps_secret(segment):
-    words = segment.split()
+def segments(command):
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=OPERATORS)
+    lexer.whitespace = " \t\r"
+    lexer.whitespace_split = True
+    words = []
+    try:
+        for token in lexer:
+            if set(token) <= set(OPERATORS):
+                yield words
+                words = []
+            else:
+                words.append(token)
+    except ValueError:  # unbalanced quotes
+        words += lexer.token.split()
+    yield words
+
+
+def dumps_secret(words):
     while words and ("=" in words[0] or words[0] in {"sudo", "command", "env"}):
         words.pop(0)
-    return bool(words) and words[0].rsplit("/", 1)[-1] in DUMPERS and bool(SECRET_FILE.search(segment))
+    return bool(words) and words[0].rsplit("/", 1)[-1] in DUMPERS and bool(SECRET_FILE.search(" ".join(words)))
 
 
 def main():
     event = json.load(sys.stdin)
     command = (event.get("tool_input") or {}).get("command") or ""
-    if not KEYCHAIN.search(command) and not any(dumps_secret(s) for s in SEGMENT.split(command)):
+    if not KEYCHAIN.search(command) and not any(dumps_secret(words) for words in segments(command)):
         return 0
     print(
         "this would print secret values into the transcript. read key names only, "
