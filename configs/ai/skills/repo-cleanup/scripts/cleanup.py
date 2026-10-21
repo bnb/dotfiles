@@ -200,25 +200,44 @@ class Repo:
         self.first_parent = set()
         for ref in self.targets:
             self.first_parent |= set((git(self.main, "rev-list", "--first-parent", "--max-count=50000", ref) or "").split())
+        self.pr_numbers = {}
         self.pr_heads = self._merged_pr_heads()
 
     def _merged_pr_heads(self):
         url = git(self.main, "remote", "get-url", "origin") or ""
         if "github.com" not in url or not shutil.which("gh"):
             return {}
-        out = run(["gh", "pr", "list", "--state", "merged", "--limit", "500", "--json", "headRefName,headRefOid"], cwd=self.main)
+        out = run(["gh", "pr", "list", "--state", "merged", "--limit", "500", "--json", "number,headRefName,headRefOid"], cwd=self.main)
         if out is None:
             self.notes.append("couldn't list merged PRs with gh, so squash-merged branches show as unmerged")
             return {}
         heads = {}
         for pr in json.loads(out):
             heads.setdefault(pr["headRefName"], set()).add(pr["headRefOid"])
+            if "number" in pr:
+                self.pr_numbers[pr["headRefOid"]] = pr["number"]
         return heads
+
+    def _has_commit(self, oid):
+        """Whether oid is here, fetching a merged PR's head from origin when it
+        isn't (its branch is usually deleted on origin once it merges)."""
+        if git(self.main, "cat-file", "-e", f"{oid}^{{commit}}") is not None:
+            return True
+        number = self.pr_numbers.get(oid)
+        if number is None or git(self.main, "fetch", "--quiet", "origin", f"refs/pull/{number}/head") is None:
+            return False
+        return git(self.main, "cat-file", "-e", f"{oid}^{{commit}}") is not None
 
     def merge_state(self, head, branch):
         """("merged" | "empty" | "unmerged", why)."""
-        if branch and head in self.pr_heads.get(branch, ()):
+        pr_heads = self.pr_heads.get(branch, ()) if branch else ()
+        if head in pr_heads:
             return "merged", "PR merged"
+        # a PR updated on GitHub before it merged (e.g. "Update branch") ends at a
+        # commit the local branch is behind, and every local commit went out with it
+        if any(self._has_commit(oid) and git(self.main, "merge-base", "--is-ancestor", head, oid) is not None
+               for oid in pr_heads):
+            return "merged", "PR merged after updates on GitHub"
         merged_into = next((ref for ref in self.targets
                             if git(self.main, "merge-base", "--is-ancestor", head, ref) is not None), None)
         if merged_into is None:
