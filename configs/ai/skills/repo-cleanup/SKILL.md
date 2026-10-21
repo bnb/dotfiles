@@ -25,7 +25,7 @@ if you think the script got something wrong, say so instead of deleting the item
 
 ## what counts as safe
 
-- **merged**: a merged PR's head is the branch's head (this covers squash merges, and needs `gh` on a GitHub remote), or the branch was merged into the default branch's history as a side branch.
+- **merged**: a merged PR's head is the branch's head, or contains it because the PR got more commits on GitHub (like "Update branch") before merging. this covers squash merges and needs `gh` on a GitHub remote. or the branch was merged into the default branch's history as a side branch.
 - **no commits of its own**: the branch points at a commit on the default branch's own line. it's removed once its reflog is 3 days old, since a newer one was probably just made for work that hasn't started.
 - **idle build output**: a cargo target dir (marked by cargo's `CACHEDIR.TAG`) in a worktree with no process inside and nothing written in the last hour. this applies to worktrees that are being kept too, because builds are cheap to redo and these dirs reach tens of GB.
 - **never touched**: uncommitted or untracked files, commits the default branch doesn't have, a running process inside, a locked worktree, the default branch itself.

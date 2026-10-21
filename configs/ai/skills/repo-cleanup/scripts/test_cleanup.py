@@ -288,6 +288,25 @@ class Fixture(unittest.TestCase):
         repo.pr_heads = {"squashed": {head}}
         self.assertEqual(repo.merge_state(head, "squashed"), ("merged", "PR merged"))
 
+    def test_pr_updated_on_github_counts_as_merged(self):
+        updated = self.worktree("updated")
+        commit(updated, "a")
+        head = sh(updated, "git", "rev-parse", "HEAD")
+        # GitHub's copy gains a commit on top, then the branch is deleted on origin,
+        # so the PR's head is only reachable through its pull ref
+        sh(updated, "git", "push", "-q", "origin", "updated")
+        github = self.root / "github"
+        sh(self.root, "git", "clone", "-q", "-b", "updated", str(self.root / "origin.git"), str(github))
+        commit(github, "b")
+        pr_head = sh(github, "git", "rev-parse", "HEAD")
+        sh(github, "git", "push", "-q", "origin", "HEAD:refs/pull/7/head", ":updated")
+        repo = cleanup.Repo(self.repo, fetch=False)
+        repo.pr_heads, repo.pr_numbers = {"updated": {pr_head}}, {pr_head: 7}
+        self.assertEqual(repo.merge_state(head, "updated"), ("merged", "PR merged after updates on GitHub"))
+        # a commit the PR never had keeps the branch
+        commit(updated, "c")
+        self.assertEqual(repo.merge_state(sh(updated, "git", "rev-parse", "HEAD"), "updated")[0], "unmerged")
+
     def test_notes_list_stashes_and_remote_branches(self):
         merged = self.worktree("merged")
         commit(merged, "a")
