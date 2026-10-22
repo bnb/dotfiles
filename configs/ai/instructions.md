@@ -29,7 +29,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
   - "merge it" or "merge it into main": for an open PR, merge it, confirm it landed, then clean up. in a repo with no PR flow, `merge --no-ff` into local main and clean up, and list that first when you offer commit options.
   - "resume": pick up this session's unfinished work (todos, git status, background tasks) without asking what it was. after a usage limit, continue exactly where you stopped.
   - "done" after you gave me steps: check they took, then keep going.
-- wait on background work with the harness's notifications or Monitor, one waiter per job. no `pgrep -f` or sleep polling loops. stop dev servers, background jobs, and child processes you started once they're done or superseded.
+- wait on background work with the harness's notifications or Monitor, one waiter per job. no `pgrep -f` or sleep polling loops. stop dev servers, background jobs, and child processes you started once they're done or superseded. stop them by the PID or process group you recorded, never by name or pattern (`pkill`, `killall`), since other agents' processes share the machine.
 
 ## git
 

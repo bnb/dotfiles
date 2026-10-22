@@ -13,7 +13,11 @@
       "Bash($HOME/.claude/skills/repo-cleanup/scripts/cleanup.py *)",
       "Bash($HOME/.agents/skills/repo-cleanup/scripts/cleanup.py *)",
       "Bash(gh pr create *)",
-      "Bash(gh pr merge *)"
+      "Bash(gh pr merge *)",
+      "Bash(cargo llvm-cov *)",
+      "Bash(cargo nextest *)",
+      "Bash(gh run rerun *)",
+      "Bash(gh workflow run *)"
     ],
     "ask": [
       "Bash(git push *)"
@@ -25,7 +29,9 @@
       "Bash(git branch -d *--force*)",
       "Bash(git branch -d* -f*)",
       "Bash(git branch -d* -D*)",
-      "Bash(gh pr merge *--admin*)"
+      "Bash(gh pr merge *--admin*)",
+      "Bash(pkill *)",
+      "Bash(killall *)"
     ]
   },
   "hooks": {
@@ -56,6 +62,16 @@
           {
             "type": "command",
             "command": "python3 \"$HOME/.claude/hooks/no-forced-git.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/no-pattern-kill.py\"",
             "timeout": 10
           }
         ]

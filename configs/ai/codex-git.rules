@@ -8,3 +8,13 @@ prefix_rule(
     match = ["git push origin main", "git push --force-with-lease"],
     not_match = ["git pull"],
 )
+
+# other agents run on this machine too, and pkill or killall reaches their
+# processes. one `pkill -f cargo-nextest` killed three other agents' test runs.
+prefix_rule(
+    pattern = [["pkill", "killall"]],
+    decision = "forbidden",
+    justification = "this can kill other agents' processes. stop yours by the PID or process group you recorded: kill <pid>, or kill -TERM -- -<pgid>",
+    match = ["pkill -f cargo-nextest", "pkill node", "killall -9 node"],
+    not_match = ["kill 1234", "kill -TERM -- -4321", "pgrep -f cargo-nextest"],
+)
