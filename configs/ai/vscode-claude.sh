@@ -11,11 +11,12 @@
 # starts claude through `clauth start work`, which gives each session the work
 # profile's credentials and its own copy of ~/.claude.json, and leaves
 # ~/.claude to the desktop app. claude-work-settings.json adds the settings
-# only work sessions should get.
+# only work sessions should get, and claude-work-mcp.json their MCP servers.
 
 claude=$1
 shift
 
 # clauth runs whichever `claude` is first on PATH, so put the bundled one there
 PATH="$(dirname "$claude"):$PATH" exec "${CARGO_HOME:-$HOME/.cargo}/bin/clauth" start work -- \
-  --settings "$(dirname "$0")/claude-work-settings.json" "$@"
+  --settings "$(dirname "$0")/claude-work-settings.json" \
+  --mcp-config "$(dirname "$0")/claude-work-mcp.json" "$@"
