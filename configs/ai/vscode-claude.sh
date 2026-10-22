@@ -16,7 +16,9 @@
 claude=$1
 shift
 
-# clauth runs whichever `claude` is first on PATH, so put the bundled one there
+# clauth runs whichever `claude` is first on PATH, so put the bundled one there.
+# --mcp-config takes any number of files, so its path goes after an `=`: with a
+# space, it also swallowed the extension's `auth status` as two more files
 PATH="$(dirname "$claude"):$PATH" exec "${CARGO_HOME:-$HOME/.cargo}/bin/clauth" start work -- \
   --settings "$(dirname "$0")/claude-work-settings.json" \
-  --mcp-config "$(dirname "$0")/claude-work-mcp.json" "$@"
+  --mcp-config="$(dirname "$0")/claude-work-mcp.json" "$@"
