@@ -128,6 +128,17 @@ apply_macos_defaults() {
   # supported switch for local volumes.
   log_info "no .DS_Store on network volumes"
   defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true || true
+
+  # agents run test suites and coverage while I'm away, and macOS's idle sleep
+  # (a minute here) stalls them into timeouts that look like real failures.
+  # only on AC power: battery keeps its own setting.
+  if pmset -g custom | awk '/^AC Power/{ac=1} /^Battery Power/{ac=0} ac && $1=="sleep"{print $2}' | grep -qx 0
+  then
+    log_info "idle sleep on AC power is already off"
+  else
+    log_info "no idle sleep on AC power"
+    sudo_run pmset -c sleep 0 || record_failure "couldn't turn off idle sleep on AC power - run: sudo pmset -c sleep 0"
+  fi
 }
 
 run_software_update() {
