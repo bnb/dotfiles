@@ -41,10 +41,10 @@ setup.sh installs these for both agents with the [Skills CLI](https://skills.sh)
 
 my own skills live in [skills/](./skills): rules from my instructions that only matter in some projects, or that need a script, so they load when needed instead of in every session. setup.sh links each skill's files into `~/.agents/skills` and the folder into `~/.claude/skills`.
 
-- [1password-retry](./skills/1password-retry/SKILL.md): what agents do when a commit or push fails because nobody saw 1Password's prompt in time. its [script](./skills/1password-retry/scripts/wait_for_me.py) posts a notification and waits until I'm back at the Mac, and the agent reruns the command after it. `python3 -m unittest discover -s configs/ai/skills/1password-retry/scripts` runs its tests.
+- [1password-retry](./skills/1password-retry/SKILL.md): what agents do when a commit or push fails because nobody saw 1Password's prompt in time, and how they hold commits and pushes for one burst while I'm away. its [script](./skills/1password-retry/scripts/wait_for_me.py) posts a notification and waits until I'm back at the Mac, and the agent reruns the command after it. `python3 -m unittest discover -s configs/ai/skills/1password-retry/scripts` runs its tests.
 - [atproto](./skills/atproto/SKILL.md): conventions for AT Protocol apps.
 - [new-project](./skills/new-project/SKILL.md): my default stack for a new project.
-- [pr-feedback](./skills/pr-feedback/SKILL.md): handling review comments, review bots, CI rounds, and gh stacks on an open PR.
+- [pr-feedback](./skills/pr-feedback/SKILL.md): handling review comments, review bots, CI rounds, and chains of PRs that build on each other (gh stacks only when I ask for a rebase).
 - [repo-cleanup](./skills/repo-cleanup/SKILL.md): what agents run when they finish work in a repo. its [script](./skills/repo-cleanup/scripts/cleanup.py) removes merged worktrees and branches and Rust build output nothing's using, and lists everything it keeps and why. `python3 -m unittest discover -s configs/ai/skills/repo-cleanup/scripts` runs its tests.
 - [rust](./skills/rust/SKILL.md): my Rust conventions, and keeping `target/` dirs from filling the disk.
 - [ui](./skills/ui/SKILL.md): how I want UI built and checked, and the harness every app gets.
