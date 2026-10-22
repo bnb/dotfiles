@@ -555,8 +555,9 @@ cargo_install_batch() {
 # `npm i -g` lives inside one node version and vanishes the moment fnm/nvm/asdf
 # switches to another. pnpm's global directory doesn't belong to any node
 # version, and its shims run whichever `node` is on $PATH. riftri is the CLI
-# my agents make worktrees with (configs/ai/instructions.md).
-PNPM_GLOBALS="@yarnpkg/cli-dist riftri"
+# my agents make worktrees with (configs/ai/instructions.md). vercel is the
+# Vercel CLI, from here because brew only has it as a macOS cask.
+PNPM_GLOBALS="@yarnpkg/cli-dist riftri vercel"
 
 # usage: pnpm_global_install_batch @yarnpkg/cli-dist
 #
