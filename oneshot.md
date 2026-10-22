@@ -92,7 +92,7 @@ Roughly in the order I do it:
 12. **App Store apps**: homebrew can't install these, so they're manual. anything I've bought rather than brewed lives there.
 13. **Docker Desktop**: has to be opened once to finish its own install and grant its privileged helper.
 14. **Karabiner-Elements**: needs input-monitoring permission in System Settings, then its own config imported.
-15. **macOS system settings**: the trackpad/keyboard/dock tweaks I redo from memory every time. `setup.sh` only handles the one I keep forgetting (`DSDontWriteNetworkStores`, which stops `.DS_Store` files appearing on network shares).
+15. **macOS system settings**: the trackpad/keyboard/dock tweaks I redo from memory every time. `setup.sh` only handles two: `DSDontWriteNetworkStores`, which stops `.DS_Store` files appearing on network shares, and no idle sleep on AC power (`pmset -c sleep 0`), so long agent runs don't stall when I step away.
 16. **Television's desktop app**: download it from [dl.todesktop.com](https://dl.todesktop.com/260923p52umxx/mac/dmg/arm64) (Apple Silicon only), then paste the link `tv links` prints into its connect screen. it updates itself after that.
 17. **[the Stream Deck profile](./configs/streamdeck)**: import it from the Stream Deck app; there's no CLI for it.
 
