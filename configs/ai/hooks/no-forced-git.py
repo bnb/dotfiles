@@ -73,7 +73,9 @@ def main():
         return 2
     print(
         "this skips a safety check (force, --no-verify, or --admin). run it without "
-        "that, or fix what it refuses on. if it really needs forcing, ask me to run it.",
+        "that, or fix what it refuses on. to remove merged worktrees and branches, "
+        "squash-merged ones included, run the repo-cleanup skill's cleanup.py, which "
+        "forces only what it has checked. if it still needs forcing, ask me to run it.",
         file=sys.stderr,
     )
     return 2
