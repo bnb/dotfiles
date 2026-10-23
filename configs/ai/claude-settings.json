@@ -12,6 +12,12 @@
       "Bash(cargo clean)",
       "Bash($HOME/.claude/skills/repo-cleanup/scripts/cleanup.py *)",
       "Bash($HOME/.agents/skills/repo-cleanup/scripts/cleanup.py *)",
+      "Bash(git add *)",
+      "Bash(git -C * add *)",
+      "Bash(git commit *)",
+      "Bash(git -C * commit *)",
+      "Bash(git merge *)",
+      "Bash(git -C * merge *)",
       "Bash(gh pr create *)",
       "Bash(gh pr merge *)",
       "Bash(cargo llvm-cov *)",
@@ -32,6 +38,45 @@
       "Bash(gh pr merge *--admin*)",
       "Bash(pkill *)",
       "Bash(killall *)"
+    ]
+  },
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None. I'm one developer. My own code lives under the GitHub owners `bnb` and `cutenode` and on tangled.org. Work repos (assistant-ui) get their own environment from a separate settings file",
+      "**Cloud provider(s)**: Railway (railway CLI) for hosted services, Cloudflare (wrangler), Vercel (vercel CLI)",
+      "**Repository visibility**: most bnb/* and cutenode/* repos are public; check a repo's visibility before treating it as private",
+      "**Internal sharing / snippet hosting**: None configured; treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: gitignored `.env*` files per repo, 1Password (`op`) for signing and ssh, clauth profiles under ~/.clauth, and GitHub Actions encrypted secrets",
+      "**Default / protected branches**: `main` in each repo, some protected by rulesets",
+      "**CI/CD deploy targets**: GitHub Actions in each repo; Railway for hosted services",
+      "**Network posture**: None configured",
+      "**Host containment**: None; Claude Code runs on my own Mac with open internet",
+      "**Source control**: the trusted repo and its remotes, plus any repo under github.com/bnb or github.com/cutenode and my repos on tangled.org. Agents commit, push, and open PRs as per-forge bot accounts (git config ~/.config/ai-agents/gitconfig, gh config ~/.config/gh-automation)",
+      "**Trusted internal domains**: localnetwork.computer, bnb.im, and their subdomains (my own sites and services)",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: happyview.localnetwork.computer (HappyView, which I host but don't maintain)",
+      "**Internal package registry**: None; public npm and crates.io",
+      "**Sensitive data locations & audiences**: populated `.env*` files, ~/.clauth profiles, keychain items, and 1Password. In cutenode/localnetwork also apps/locallibrary/.env, apps/web/.env.local, and crates/locallibrary/src/retention.rs. Share only with audiences cleared at the [named+specifics] bar",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: None configured; fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development on my own projects, following ~/.claude/CLAUDE.md",
+      "**Trusted repo**: the repo the session started in and its remotes. In a public repo only that repo's own work belongs in commits, and secrets never do",
+      "**Org-specific CLIs**: riftri (worktrees), railway, tg (tangled), gh, clauth, wrangler, vercel",
+      "**Standing workflow in my own repos**: agents work on `bnb/*` branches in worktrees under `.claude/worktrees/`, commit there, merge a finished branch into local `main` with `git merge --no-ff`, open the PRs I approved, merge a PR when I say so, and remove merged worktrees and branches afterward. In bnb/* and cutenode/* repos these are routine steps I ask for, not changes to shared resources"
+    ],
+    "allow": [
+      "$defaults",
+      "Bash(riftri worktree add:*)",
+      "Answered Options: agents end messages with numbered questions and lettered options, and I answer tersely (`2.a`, `1.a 2.b`, `a`, `approved`, `submit`, `merge it`, `do those merges`, `retry`, `continue`). In my own repos (bnb/*, cutenode/*, my tangled repos, and their worktrees), that reply is my explicit request for exactly the action, target, and specifics the chosen option or the agent's previous message named, and meets the [named+specifics] bar for it (a commit, a local merge into main, opening or merging a PR, resolving review threads on a PR I asked the agent to work on, a release edit) as if I had typed it out. It covers nothing the option didn't name, and `retry` covers only the action that was just denied"
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Bash(railway down:*)",
+      "Bash(railway service delete:*)"
     ]
   },
   "hooks": {

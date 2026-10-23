@@ -1047,12 +1047,13 @@ link_ai_skills() {
 
 # Settings that enforce rules instructions.md can only ask for: no attribution
 # lines, none of Claude Code's own git instructions, pushes asking first,
-# cleanup steps that don't, and hooks refusing em dashes, secret reads,
-# forced cleanup or hook-skipping commits, and pkill or killall
-# (configs/ai/claude-settings.json and configs/ai/hooks, and
-# configs/ai/codex-git.rules for Codex). Added to ~/.claude/settings.json:
-# lists gain the missing entries, and a key already set to something else is
-# left alone. Entries in RETIRED were mine once and get taken out. clauth
+# cleanup, commit, and merge steps that don't, my auto mode environment, and
+# hooks refusing em dashes, secret reads, forced cleanup or hook-skipping
+# commits, and pkill or killall (configs/ai/claude-settings.json and
+# configs/ai/hooks, and configs/ai/codex-git.rules for Codex). Added to
+# ~/.claude/settings.json: lists gain the missing entries, the auto mode
+# environment is replaced whole, and any other key already set to something
+# else is left alone. Entries in RETIRED were mine once and get taken out. clauth
 # copies these keys into work sessions too.
 enforce_ai_rules() {
   log_step "adding my guardrails to Claude Code's settings"
@@ -1097,10 +1098,18 @@ def retire(permissions):
     return changed
 
 
+# auto mode's environment reads as one description, so appending a second one
+# (what /auto-mode-setup writes from inside one repo) would contradict it
+REPLACED = {"environment"}
+
+
 def merge(current, wanted):
     changed = False
     for key, value in wanted.items():
-        if key not in current:
+        if key in REPLACED and current.get(key) != value:
+            current[key] = value
+            changed = True
+        elif key not in current:
             current[key] = value
             changed = True
         elif isinstance(value, dict) and isinstance(current[key], dict):
