@@ -3,7 +3,8 @@
 #
 # Claude in VS Code runs through this: setup.sh makes it the extension's
 # claudeCode.claudeProcessWrapper. The extension calls it with the claude it
-# bundles as $1, then claude's own args.
+# bundles as $1, then claude's own args. configs/zsh/clauth/work.sh calls it
+# the same way for `claude` in a terminal under ~/GitHub/assistant-ui.
 #
 # VS Code is for work and the Claude desktop app is for personal work, but
 # both run Claude Code against ~/.claude, and Claude Code trusts the account
