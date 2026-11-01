@@ -1029,7 +1029,7 @@ link_claude_skill() {
 # My own skills in configs/ai/skills: the rules from instructions.md that only
 # matter in some projects, so they load when needed instead of every session.
 # Every file gets linked, so a skill's scripts come along with its SKILL.md.
-# Build leftovers (node_modules, coverage, __pycache__) stay behind.
+# Build leftovers (node_modules, coverage, __pycache__, cargo's target) stay behind.
 link_ai_skills() {
   local skill name file
 
@@ -1039,8 +1039,41 @@ link_ai_skills() {
     while IFS= read -r file
     do
       link_dotfile "configs/ai/skills/$name/$file" "$HOME/.agents/skills/$name/$file" || true
-    done < <(cd "$skill" && find . \( -name __pycache__ -o -name node_modules -o -name coverage \) -prune -o -type f -print | sed 's#^\./##')
+    done < <(cd "$skill" && find . \( -name __pycache__ -o -name node_modules -o -name coverage -o -name target \) -prune -o -type f -print | sed 's#^\./##')
     link_claude_skill "$name"
+  done
+  return 0
+}
+
+# Rust CLIs that ship inside a skill (configs/ai/skills/<skill>/<crate>/Cargo.toml),
+# like the coordinator's coord. `cargo install --path` rebuilds every time, so a
+# crate with nothing newer than its installed binary is skipped. The binary is
+# named after the crate's folder.
+install_skill_tools() {
+  local manifest crate bin
+
+  if ! command -v cargo >/dev/null 2>&1
+  then
+    record_failure "cargo isn't available - skipping the skills' tools"
+    return 0
+  fi
+
+  for manifest in "$DOTFILES_DIR"/configs/ai/skills/*/*/Cargo.toml
+  do
+    [ -f "$manifest" ] || continue
+    crate="$(dirname "$manifest")"
+    bin="$HOME/.cargo/bin/$(basename "$crate")"
+    if [ -x "$bin" ] && [ -z "$(find "$crate" -path "$crate/target" -prune -o -type f -newer "$bin" -print -quit)" ]
+    then
+      log_info "already installed (skill tool): $(basename "$crate")"
+      continue
+    fi
+
+    log_step "cargo install --path $crate"
+    if ! cargo install --locked --path "$crate"
+    then
+      record_failure "cargo install --path $crate"
+    fi
   done
   return 0
 }
@@ -1205,6 +1238,7 @@ finalize_shell_config() {
   wire_ai_accounts || true
   link_ai_instructions || true
   link_ai_skills || true
+  install_skill_tools || true
   enforce_ai_rules || true
   link_work_files || true
 }
