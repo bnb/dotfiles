@@ -193,6 +193,23 @@ __personal_cd_tree() {
 alias github='__personal_cd_tree "$PERSONAL_GITHUB_DIR"' # cd to ~/GitHub, or a path under it
 alias tangled='__personal_cd_tree "$PERSONAL_TANGLED_DIR"' # cd to ~/tangled, or a path under it
 
+# MARVIN (github.com/SterlingChin/marvin-template) is a Claude Code workspace
+# that keeps goals, priorities and session logs. Mine is scoped to Local
+# Network and isn't in this repo, so a machine without it gets told where it
+# comes from. Arguments go to claude
+__personal_marvin() {
+  local __personal_marvin_dir="$HOME/marvin-localnetwork"
+
+  if [ ! -d "$__personal_marvin_dir" ]
+  then
+    print -u2 "marvin: $__personal_marvin_dir doesn't exist - set it up from ~/marvin-template"
+    return 1
+  fi
+
+  cd "$__personal_marvin_dir" && claude "$@"
+}
+alias marvin="__personal_marvin" # open MARVIN, my Local Network chief of staff, in Claude Code
+
 # short aliases
 #
 # r deliberately replaces zsh's builtin `r` (re-run the last command); that's
