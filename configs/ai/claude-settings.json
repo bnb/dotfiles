@@ -116,6 +116,16 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/no-alert-dismissal.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
             "command": "python3 \"$HOME/.claude/hooks/no-pattern-kill.py\"",
             "timeout": 10
           }
