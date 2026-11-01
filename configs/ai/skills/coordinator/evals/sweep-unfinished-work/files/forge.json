@@ -1,0 +1,13 @@
+{
+  "github": {
+    "cutenode/localnetwork": [
+      {"number": 331, "title": "feat(lexicons): vendor lexicons at build time", "branch": "bnb/vendored-lexicons", "state": "MERGED", "mergedAt": "2026-10-30T10:02:00Z", "url": "https://github.com/cutenode/localnetwork/pull/331"},
+      {"number": 327, "title": "fix(web): stop duplicate entries crashing profile pages", "branch": "bnb/profile-dedupe", "state": "OPEN", "reviewDecision": "APPROVED", "checks": "SUCCESS", "unresolvedThreads": 0, "url": "https://github.com/cutenode/localnetwork/pull/327"},
+      {"number": 334, "title": "fix(web): dedupe profile entries by uri", "branch": "bnb/profile-unique", "state": "OPEN", "reviewDecision": "REVIEW_REQUIRED", "checks": "SUCCESS", "unresolvedThreads": 2, "url": "https://github.com/cutenode/localnetwork/pull/334"}
+    ]
+  },
+  "tangled": {
+    "upvote.at": []
+  },
+  "notes": "No PR exists for bnb/oauth-blob-scope or bnb/auth-hardening."
+}

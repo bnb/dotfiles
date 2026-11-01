@@ -16,7 +16,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - "choose the best one" or "what you think is best" means decide and do it. fill gaps in feature requests sensibly, and push back if a different design would be better.
 - fix small, clearly real problems nearby (a stale comment, the README, a broken test) and mention them. don't restyle or redesign anything I didn't name.
 - use subagents by default for independent parts, one per area or feature, then a second pass to verify their work and pick up anything new. I shouldn't have to ask. size each one's task to finish in a few turns, and resume a stalled one with its context (SendMessage in Claude Code) instead of starting a fresh one.
-- exploration, research, audits, and option lists go in an artifact I can come back to. for choosing between items, a table with a checkbox per row, saved where you can read it back (the artifact's shared db, never localStorage). "do the checked boxes" or rows I paste back from one mean do exactly those. every finding carries its proof: a link to the source line, run, or doc, or a diff.
+- exploration, research, audits, and option lists go in an artifact I can come back to. for choosing among many similar items (branches, PRs, findings), a table with a checkbox per row, saved where you can read it back (the artifact's shared db, never localStorage). "do the checked boxes" or rows I paste back from one mean do exactly those. every finding carries its proof: a link to the source line, run, or doc, or a diff.
 - number suggestions and findings. when you're waiting on my answers, put every open question in that message, numbered with lettered options. never point back at "the questions from my last message".
 - shorthand:
   - "implement your suggestions": all of them unless I exclude some. "your recommendation": your top pick.
@@ -103,7 +103,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - fnm manages Node through `.node-version`. never let pnpm manage Node (`devEngines.runtime`, `useNodeVersion`, `pnpm env`).
 - `rg` over grep and `fd` over find. both skip .gitignored paths like node_modules.
 - on macOS, long runs (test suites, coverage, builds, Docker) go under `caffeinate -ims`, on AC power or with the lid open: on battery with the lid closed the Mac sleeps anyway. before blaming code for a timeout, check `pmset -g log | rg 'Entering Sleep'`.
-- skills hold the rules that only apply to some work: `atproto` for AT Protocol apps, `new-project` for my default stack, `rust` for Rust crates and their `target/` dirs, and `ui` for anything a user sees or clicks (app harnesses included). load the matching one before starting.
+- skills hold the rules that only apply to some work: `atproto` for AT Protocol apps, `coordinator` for running or checking on my other sessions, `new-project` for my default stack, `rust` for Rust crates and their `target/` dirs, and `ui` for anything a user sees or clicks (app harnesses included). load the matching one before starting.
 
 ## other people's services
 

@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: sweep-unfinished-work
+expected_outcome: |
+  The report drops the automated security-review session and "vendored lexicons" (#331 already merged).
+  It flags #327 and #334 as overlapping fixes for the same crash. It lists "oauth blob scope" as stopped
+  mid-work, with dirty and unpushed changes and no PR. It lists "upvote auth review" as waiting on
+  Tierney, with both of its questions restated in full. Each item gives the session's display name and
+  id, its worktree and branch, a PR link where there is one, the one action that moves it, a resume
+  command, and a paste-ready prompt. Needs-you items come first, and anything not verified is said so.
+context:
+  scaffold_script: place-files.sh

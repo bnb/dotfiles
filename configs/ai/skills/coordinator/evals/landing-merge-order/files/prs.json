@@ -1,0 +1,19 @@
+{
+  "repo": "cutenode/localnetwork",
+  "forge": "github",
+  "rules": {
+    "requiredChecks": ["ci / test", "ci / lint"],
+    "requireUpToDate": false,
+    "dismissStaleApprovalsOnPush": true,
+    "requiredApprovals": 1
+  },
+  "openPRs": [
+    {"number": 301, "title": "fix(ci): unbreak main after lockfile drift", "branch": "bnb/fix-main-lockfile", "head": "a1b2c3d", "author": "botandbang", "reviewDecision": "APPROVED", "checks": "SUCCESS", "url": "https://github.com/cutenode/localnetwork/pull/301"},
+    {"number": 305, "title": "feat(web): profile pages", "branch": "bnb/profile-pages", "head": "b2c3d4e", "author": "botandbang", "reviewDecision": "APPROVED", "checks": "SUCCESS", "url": "https://github.com/cutenode/localnetwork/pull/305"},
+    {"number": 306, "title": "feat(cli): upload mixes", "branch": "bnb/mix-upload", "head": "c3d4e5f", "author": "botandbang", "reviewDecision": "APPROVED", "checks": "SUCCESS", "url": "https://github.com/cutenode/localnetwork/pull/306"},
+    {"number": 308, "title": "feat: shared press kits", "branch": "bnb/press-kits", "head": "d4e5f6a", "author": "botandbang", "reviewDecision": "REVIEW_REQUIRED", "checks": "FAILURE", "url": "https://github.com/cutenode/localnetwork/pull/308"},
+    {"number": 310, "title": "chore(main): release localnetwork 0.9.0", "branch": "release-please--branches--main", "head": "e5f6a7b", "author": "github-actions", "reviewDecision": "APPROVED", "checks": "SUCCESS", "url": "https://github.com/cutenode/localnetwork/pull/310"},
+    {"number": 311, "title": "perf(ci): cache the cargo registry", "branch": "bnb/ci-cache", "head": "f6a7b8c", "author": "botandbang", "reviewDecision": "APPROVED", "checks": "SUCCESS", "url": "https://github.com/cutenode/localnetwork/pull/311"}
+  ],
+  "main": {"head": "0f1e2d3", "latestRun": "FAILURE (ci / test: lockfile out of date)"}
+}

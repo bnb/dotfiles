@@ -1,0 +1,27 @@
+$ coord merge-plan --repo ~/GitHub/cutenode/localnetwork --base origin/main '#301=origin/bnb/fix-main-lockfile' '#305=origin/bnb/profile-pages' '#306=origin/bnb/mix-upload' '#308=origin/bnb/press-kits' '#311=origin/bnb/ci-cache'
+base origin/main 0f1e2d3
+
+heads
+  #301  origin/bnb/fix-main-lockfile  a1b2c3d  vs base: clean
+  #305  origin/bnb/profile-pages      b2c3d4e  vs base: clean
+  #306  origin/bnb/mix-upload         c3d4e5f  vs base: clean
+  #308  origin/bnb/press-kits         d4e5f6a  vs base: clean
+  #311  origin/bnb/ci-cache           f6a7b8c  vs base: clean
+
+pairs that conflict (4 of 10)
+  #305 x #306: CHANGELOG.md
+  #305 x #308: CHANGELOG.md
+  #306 x #308: CHANGELOG.md, apps/web/src/routes.ts
+  #301 x #311: .github/workflows/ci.yml
+
+hot files
+  CHANGELOG.md  3 pairs
+  apps/web/src/routes.ts  1 pair
+  .github/workflows/ci.yml  1 pair
+
+chain (auto)
+  1. #301 lands clean
+  2. #305 lands clean
+  3. #306 needs main merged in after #305: CHANGELOG.md
+  4. #308 needs main merged in after #305: CHANGELOG.md
+  5. #311 needs main merged in after #301: .github/workflows/ci.yml
