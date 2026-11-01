@@ -56,6 +56,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - replies, comments, and messages I ask for come back as paste-ready markdown here. I'll post them.
 - once a PR is open, its reviews, bot comments, CI rounds, and stack follow the `pr-feedback` skill ("address feedback", "make the bots/CI happy", "fix conflicts").
 - expensive suites run on a schedule or `workflow_dispatch`, not every PR.
+- **never dismiss a CodeQL or code scanning alert**, not even one that looks like a false positive. a wrong dismissal hides a real hole, so every alert gets a code fix. no dismissing in the web UI or through `gh api` (`state=dismissed`), no suppression comments (`// codeql[...]`, `lgtm`), and no CodeQL config change that drops a query, path or language so the alert goes away. if you're sure it's a false positive, leave it open and bring me the alert link and your evidence.
 
 ## code
 

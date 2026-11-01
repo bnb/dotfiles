@@ -13,6 +13,7 @@ CI and review bots cost money on every push, so the point of all of this is fewe
 - triage each bot comment as blocking or not before touching code.
 - confirm a fix by replying with a GitHub suggestion block before pushing. replies come back to me as paste-ready markdown unless I asked you to post them.
 - batch every real fix into one push.
+- CodeQL and code scanning alerts always block, and get fixed in the code. never dismiss one, suppress it, or narrow the CodeQL config to clear it, even when it looks like a false positive (the instructions' PRs section has the full rule). a suspected false positive comes to me with its alert link and evidence, and stays open.
 
 ## push rounds
 
