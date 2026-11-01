@@ -1,0 +1,7 @@
+# `cargo coverage`: the tests under cargo-llvm-cov, failing below these thresholds. Raise the
+# thresholds to just under the new numbers when coverage goes up.
+# `cargo coverage-hegel`: the hegel properties alone, held to the same thresholds, so every path
+# has a property behind it and not just a fixed example.
+[alias]
+coverage = "llvm-cov nextest --locked --no-fail-fast --fail-under-lines 98.5 --fail-under-functions 97.5 --fail-under-regions 96"
+coverage-hegel = "llvm-cov nextest --locked --no-fail-fast --test props --fail-under-lines 98.5 --fail-under-functions 97.5 --fail-under-regions 96"

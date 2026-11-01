@@ -3,7 +3,8 @@
 #
 # Claude in VS Code runs through this: setup.sh makes it the extension's
 # claudeCode.claudeProcessWrapper. The extension calls it with the claude it
-# bundles as $1, then claude's own args.
+# bundles as $1, then claude's own args. configs/zsh/clauth/work.sh calls it
+# the same way for `claude` in a terminal under ~/GitHub/assistant-ui.
 #
 # VS Code is for work and the Claude desktop app is for personal work, but
 # both run Claude Code against ~/.claude, and Claude Code trusts the account
@@ -11,11 +12,14 @@
 # starts claude through `clauth start work`, which gives each session the work
 # profile's credentials and its own copy of ~/.claude.json, and leaves
 # ~/.claude to the desktop app. claude-work-settings.json adds the settings
-# only work sessions should get.
+# only work sessions should get, and claude-work-mcp.json their MCP servers.
 
 claude=$1
 shift
 
-# clauth runs whichever `claude` is first on PATH, so put the bundled one there
+# clauth runs whichever `claude` is first on PATH, so put the bundled one there.
+# --mcp-config takes any number of files, so its path goes after an `=`: with a
+# space, it also swallowed the extension's `auth status` as two more files
 PATH="$(dirname "$claude"):$PATH" exec "${CARGO_HOME:-$HOME/.cargo}/bin/clauth" start work -- \
-  --settings "$(dirname "$0")/claude-work-settings.json" "$@"
+  --settings "$(dirname "$0")/claude-work-settings.json" \
+  --mcp-config="$(dirname "$0")/claude-work-mcp.json" "$@"

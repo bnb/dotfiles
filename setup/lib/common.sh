@@ -555,8 +555,9 @@ cargo_install_batch() {
 # `npm i -g` lives inside one node version and vanishes the moment fnm/nvm/asdf
 # switches to another. pnpm's global directory doesn't belong to any node
 # version, and its shims run whichever `node` is on $PATH. riftri is the CLI
-# my agents make worktrees with (configs/ai/instructions.md).
-PNPM_GLOBALS="@yarnpkg/cli-dist riftri"
+# my agents make worktrees with (configs/ai/instructions.md). vercel is the
+# Vercel CLI, from here because brew only has it as a macOS cask.
+PNPM_GLOBALS="@yarnpkg/cli-dist riftri vercel"
 
 # usage: pnpm_global_install_batch @yarnpkg/cli-dist
 #
@@ -1028,7 +1029,7 @@ link_claude_skill() {
 # My own skills in configs/ai/skills: the rules from instructions.md that only
 # matter in some projects, so they load when needed instead of every session.
 # Every file gets linked, so a skill's scripts come along with its SKILL.md.
-# Build leftovers (node_modules, coverage, __pycache__) stay behind.
+# Build leftovers (node_modules, coverage, __pycache__, cargo's target) stay behind.
 link_ai_skills() {
   local skill name file
 
@@ -1038,20 +1039,54 @@ link_ai_skills() {
     while IFS= read -r file
     do
       link_dotfile "configs/ai/skills/$name/$file" "$HOME/.agents/skills/$name/$file" || true
-    done < <(cd "$skill" && find . \( -name __pycache__ -o -name node_modules -o -name coverage \) -prune -o -type f -print | sed 's#^\./##')
+    done < <(cd "$skill" && find . \( -name __pycache__ -o -name node_modules -o -name coverage -o -name target \) -prune -o -type f -print | sed 's#^\./##')
     link_claude_skill "$name"
+  done
+  return 0
+}
+
+# Rust CLIs that ship inside a skill (configs/ai/skills/<skill>/<crate>/Cargo.toml),
+# like the coordinator's coord. `cargo install --path` rebuilds every time, so a
+# crate with nothing newer than its installed binary is skipped. The binary is
+# named after the crate's folder.
+install_skill_tools() {
+  local manifest crate bin
+
+  if ! command -v cargo >/dev/null 2>&1
+  then
+    record_failure "cargo isn't available - skipping the skills' tools"
+    return 0
+  fi
+
+  for manifest in "$DOTFILES_DIR"/configs/ai/skills/*/*/Cargo.toml
+  do
+    [ -f "$manifest" ] || continue
+    crate="$(dirname "$manifest")"
+    bin="$HOME/.cargo/bin/$(basename "$crate")"
+    if [ -x "$bin" ] && [ -z "$(find "$crate" -path "$crate/target" -prune -o -type f -newer "$bin" -print -quit)" ]
+    then
+      log_info "already installed (skill tool): $(basename "$crate")"
+      continue
+    fi
+
+    log_step "cargo install --path $crate"
+    if ! cargo install --locked --path "$crate"
+    then
+      record_failure "cargo install --path $crate"
+    fi
   done
   return 0
 }
 
 # Settings that enforce rules instructions.md can only ask for: no attribution
 # lines, none of Claude Code's own git instructions, pushes asking first,
-# cleanup steps that don't, and hooks refusing em dashes, secret reads, and
-# forced cleanup or hook-skipping commits
-# (configs/ai/claude-settings.json and configs/ai/hooks, and
-# configs/ai/codex-git.rules for Codex). Added to ~/.claude/settings.json:
-# lists gain the missing entries, and a key already set to something else is
-# left alone. Entries in RETIRED were mine once and get taken out. clauth
+# cleanup, commit, and merge steps that don't, my auto mode environment, and
+# hooks refusing em dashes, secret reads, forced cleanup or hook-skipping
+# commits, and pkill or killall (configs/ai/claude-settings.json and
+# configs/ai/hooks, and configs/ai/codex-git.rules for Codex). Added to
+# ~/.claude/settings.json: lists gain the missing entries, the auto mode
+# environment is replaced whole, and any other key already set to something
+# else is left alone. Entries in RETIRED were mine once and get taken out. clauth
 # copies these keys into work sessions too.
 enforce_ai_rules() {
   log_step "adding my guardrails to Claude Code's settings"
@@ -1096,10 +1131,18 @@ def retire(permissions):
     return changed
 
 
+# auto mode's environment reads as one description, so appending a second one
+# (what /auto-mode-setup writes from inside one repo) would contradict it
+REPLACED = {"environment"}
+
+
 def merge(current, wanted):
     changed = False
     for key, value in wanted.items():
-        if key not in current:
+        if key in REPLACED and current.get(key) != value:
+            current[key] = value
+            changed = True
+        elif key not in current:
             current[key] = value
             changed = True
         elif isinstance(value, dict) and isinstance(current[key], dict):
@@ -1195,6 +1238,7 @@ finalize_shell_config() {
   wire_ai_accounts || true
   link_ai_instructions || true
   link_ai_skills || true
+  install_skill_tools || true
   enforce_ai_rules || true
   link_work_files || true
 }

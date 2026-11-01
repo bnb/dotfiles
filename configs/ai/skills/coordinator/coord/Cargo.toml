@@ -1,0 +1,23 @@
+[package]
+name = "coord"
+version = "0.1.0"
+edition = "2024"
+description = "Census and merge planning for parallel Claude Code sessions"
+publish = false
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+indexmap = "2.14.2"
+jiff = { version = "0.2.38", features = ["serde"] }
+rustc-hash = "2.1.3"
+rustix = { version = "1.1.6", features = ["process"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+
+[dev-dependencies]
+# Property-based tests. Pinned: Hegel is in beta and makes breaking changes.
+# `static-engine` links Hegel's engine as an ordinary dependency, so it's in Cargo.lock: without
+# it, hegeltest's build script fetches and builds the engine in a nested, unlocked cargo build.
+hegeltest = { version = "=0.48.1", features = ["static-engine"] }
+tempfile = "3.27.0"

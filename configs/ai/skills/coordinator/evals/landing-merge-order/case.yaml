@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: landing-merge-order
+expected_outcome: |
+  The coordinator makes itself the only merger and tells every owner not to merge, including the
+  "profile pages" session that said it would merge #305 itself. #301 lands first because main is red.
+  The release PR #310 stays out of the order until Tierney names it. #311's CI speedup goes near the
+  top after #301. CHANGELOG.md is named as the hot file, with a suggestion to take it away. #306's owner
+  is dead, so the coordinator takes it over or reassigns it. #308 needs CI fixed and a review first.
+  Owners hold pushes until their conflict partners land. PRs are linked, and the coordinator asks
+  Tierney nothing it could work out from the census.
+context:
+  scaffold_script: place-files.sh
