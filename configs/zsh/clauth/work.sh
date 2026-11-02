@@ -24,14 +24,6 @@ fi
 __personal_debug "wrapping claude for work repos and gode routines"
 
 claude() {
-  # inside a `clauth start` session already (CLAUDE_CONFIG_DIR is its
-  # per-profile runtime), so the account is settled
-  if [ -n "$CLAUDE_CONFIG_DIR" ]
-  then
-    command claude "$@"
-    return
-  fi
-
   local work=false
   case "${PWD:A}/" in
     "${PERSONAL_GITHUB_DIR:A}/assistant-ui/"* | "${HOME:A}/marvin-work/"* | "${HOME:A}/Routines/"*)
@@ -40,7 +32,11 @@ claude() {
       [[ "$(git symbolic-ref --quiet --short HEAD 2>/dev/null)" == routine/* ]] && work=true ;;
   esac
 
-  if $work
+  # every `clauth start` session sets CLAUDE_CONFIG_DIR to its profile's
+  # runtime, and shells opened from one inherit it. A work runtime is settled
+  # already; a personal or tieliaco one isn't, and `clauth start work`
+  # replaces it
+  if $work && [[ "${CLAUDE_CONFIG_DIR:A}/" != "${HOME:A}/.clauth/profiles/work/"* ]]
   then
     "$PERSONAL_DOTFILES_PATH/configs/ai/vscode-claude.sh" "$(whence -p claude)" "$@"
   else
