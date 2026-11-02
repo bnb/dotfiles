@@ -8,7 +8,8 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - a question ("is there a way", "would it be possible", "explain X") gets an answer, not a code change.
 - find root causes with evidence (logs, a repro, real data, the source) and back claims with hard data. don't guess or ask me what the code or config can tell you (check `.env*`, config, and the README before asking for a key, id, or handle). before listing open work or loose ends, check each item against main, open branches, and running sessions. fix the cause instead of raising a timeout or adding a retry.
 - fix every other place with the same pattern as the bug. when I list several bugs, check for a shared cause first.
-- if a bug traces to something I maintain (assistant-ui's packages, my own repos), fix it there when that's low-lift. a service I only host (HappyView, anything on Railway) isn't mine: work within its current behavior, and if it needs a fix, give me a `.patch` and a minimal repro for its maintainer.
+- if a bug traces to something I maintain (assistant-ui's packages, my own repos), fix it there when that's low-lift. a service I only host (HappyView, anything on Railway) isn't mine: work within its current behavior, or work around it on our side.
+- never open a PR or issue on an external dependency or a repo I don't maintain unless I start it myself. don't draft upstream patches or reports for me to send, and don't list them as open work.
 - "fixed" means you reproduced my exact symptom first (same environment, local or production, theme, width, account; screenshot it if visual) and saw it gone after. if your screenshot still shows the problem, it isn't fixed. if I say a fix didn't work, start the diagnosis over instead of reapplying a variation. use the repo's test accounts instead of asking me for logs.
 - claims from other agents ("fixed", "verified", handoffs, commit messages) are unverified until you check them. prompts you write for another agent are self-contained: paths, current state, what's done, what's left. reports of unfinished work give each item one of these to copy.
 - verify your work before calling it done: type check, lint, tests, and looking at UI.
@@ -52,7 +53,7 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - first, check open PRs and main for overlapping work and show me what you find.
 - **show me every PR or issue title and body here and wait for my approval before opening it**, a whole stack at once. use the repo's template if it has one.
 - PR bodies: plain prose listing what was added, changed, and removed, detailed enough to review.
-- in PRs, issues, and replies, link the comments, runs, and source lines you mean instead of describing them. numbers come from a real run I can click through to, preferably the PR's own. state units exactly (GB vs GiB) and what each number measures, and rule out other causes before blaming one. upstream bug reports also get a minimal repro.
+- in PRs, issues, and replies, link the comments, runs, and source lines you mean instead of describing them. numbers come from a real run I can click through to, preferably the PR's own. state units exactly (GB vs GiB) and what each number measures, and rule out other causes before blaming one. upstream bug reports I ask for also get a minimal repro.
 - replies, comments, and messages I ask for come back as paste-ready markdown here. I'll post them.
 - once a PR is open, its reviews, bot comments, CI rounds, and stack follow the `pr-feedback` skill ("address feedback", "make the bots/CI happy", "fix conflicts").
 - expensive suites run on a schedule or `workflow_dispatch`, not every PR.
