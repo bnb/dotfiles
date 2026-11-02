@@ -3,7 +3,8 @@
 # Claude in VS Code is a work session because its process wrapper,
 # configs/ai/vscode-claude.sh, starts it with `clauth start work`. Terminals
 # (Gode's agent sessions included) run plain `claude`, which follows clauth's
-# global account, kept on personal. So in ~/GitHub/assistant-ui this sends
+# global account, kept on personal. So in ~/GitHub/assistant-ui and my work
+# MARVIN workspace, ~/marvin-work, this sends
 # `claude` through the same wrapper, and the session gets the work login,
 # claude-work-settings.json and claude-work-mcp.json like VS Code's do.
 #
@@ -33,7 +34,7 @@ claude() {
 
   local work=false
   case "${PWD:A}/" in
-    "${PERSONAL_GITHUB_DIR:A}/assistant-ui/"* | "${HOME:A}/Routines/"*)
+    "${PERSONAL_GITHUB_DIR:A}/assistant-ui/"* | "${HOME:A}/marvin-work/"* | "${HOME:A}/Routines/"*)
       work=true ;;
     *)
       [[ "$(git symbolic-ref --quiet --short HEAD 2>/dev/null)" == routine/* ]] && work=true ;;
