@@ -194,13 +194,13 @@ alias github='__personal_cd_tree "$PERSONAL_GITHUB_DIR"' # cd to ~/GitHub, or a 
 alias tangled='__personal_cd_tree "$PERSONAL_TANGLED_DIR"' # cd to ~/tangled, or a path under it
 
 # MARVIN (github.com/SterlingChin/marvin-template) is a Claude Code workspace
-# that keeps goals, priorities and session logs. I keep one per project at
-# ~/marvin-<project>, outside this repo, so a machine without one gets told
-# where it comes from. `marvin` opens Local Network's, `marvin docov` opens
-# ~/marvin-docov. A first argument starting with - goes to claude with the
-# rest, so `marvin -c` still continues Local Network's last session
+# that keeps goals, priorities and session logs. I keep two, ~/marvin-personal
+# and ~/marvin-work, outside this repo, so a machine without one gets told
+# where it comes from. `marvin` opens the personal one, `marvin work` opens
+# ~/marvin-work. A first argument starting with - goes to claude with the
+# rest, so `marvin -c` still continues the personal one's last session
 __personal_marvin() {
-  local __personal_marvin_project="localnetwork"
+  local __personal_marvin_project="personal"
 
   if [ -n "$1" ] && [[ "$1" != -* ]]
   then
@@ -218,7 +218,7 @@ __personal_marvin() {
 
   cd "$__personal_marvin_dir" && claude "$@"
 }
-alias marvin="__personal_marvin" # open MARVIN, my chief of staff for a project (Local Network by default), in Claude Code
+alias marvin="__personal_marvin" # open MARVIN, my chief of staff (personal by default, `marvin work` for work), in Claude Code
 
 # short aliases
 #
