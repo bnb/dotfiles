@@ -61,19 +61,19 @@ DO_NOT_TRACK=1 pnpm dlx skills update -g
 
 ## tracehub
 
-[tracehub.sh](./tracehub.sh) turns tracehub ([assisted-by](https://github.com/assistant-ui/assisted-by)) on and off for my work checkouts in `~/GitHub/assistant-ui`, and never touches a repo outside it.
+[tracehub.sh](./tracehub.sh) installs [tracehub](https://github.com/assistant-ui/tracehub)'s git hooks in my work checkouts in `~/GitHub/assistant-ui`, and never touches a repo outside it.
 
 ```sh
-config:tracehub setup    # once, and again after cloning a repo there
-config:tracehub status   # each checkout's consent: yes, no, or not given
-toggle:tracehub          # flip it (or config:tracehub on / off)
+npx --yes tracehub@0.5.2 setup   # once: sign in as me, allow assistant-ui, skip the hooks step
+config:tracehub setup            # hooks in every checkout and worktree there; again after cloning or adding a worktree
+config:tracehub status           # sign-in, upload rules, and any hook that's missing or on another version
 ```
 
-`setup` is assisted-by's own guided setup pointed at that directory: GitHub sign-in, git hooks in each checkout (and its worktrees), and consent for the repos I pick. say no to global hooks, since they'd reach every repo on the machine (assisted-by refuses them here anyway, because `~/.gitconfig` uses `[include]`). in the Husky repos the hooks are new files in `.husky/`, so `setup` also lists them in the repo's `.git/info/exclude` to keep them out of commits.
+tracehub's own setup only installs global hooks, and it refuses them here because `~/.gitconfig` uses `[include]`. they'd reach every repo on the machine anyway, and Husky repos skip them. so `config:tracehub setup` writes tracehub's own hook blocks per repo instead: into the shared `.git/hooks` of plain repos (which covers their worktrees), and as untracked `.husky/` files in each worktree of the Husky repos, listed in the repo's `.git/info/exclude` to keep them out of commits. branches that track their own `.husky/prepare-commit-msg` or `pre-push` get it from `~/.config/husky/init.sh`, which Husky sources before every hook. that part only acts when `origin` is an assistant-ui repo.
 
-**accounts:** tracehub is always signed in as me, whichever account `toggle:ai-github` gives the agents. assisted-by keeps its own sign-in and ignores gh's and git's, so a push uploads as me whether I or an agent (as the bot or as me) made it. that's on purpose: a tracehub session belongs to the account that first uploaded it, and tracehub refuses anyone else's uploads to it, so uploads that followed the agents' account would strand any session whose commits get pushed by both. `setup` signs in on its own first and checks the account against my own gh login. if the browser was signed in as the bot, it removes that sign-in and stops. `status` shows who it's signed in as. with the toggle on, the bot also needs write access to a work repo before Claude Code can push to it from outside a work session.
+**accounts:** tracehub is always signed in as me, whichever account `toggle:ai-github` gives the agents. tracehub keeps its own sign-in and ignores gh's and git's, so a push uploads as me whether I or an agent (as the bot or as me) made it. that's on purpose: a tracehub session belongs to the account that first uploaded it, and tracehub refuses anyone else's uploads to it, so uploads that followed the agents' account would strand any session whose commits get pushed by both. `config:tracehub setup` checks tracehub's sign-in against my own gh login and stops if it's anyone else. with the toggle on, the bot also needs write access to a work repo before Claude Code can push to it from outside a work session.
 
-`on` and `off` set assisted-by's consent for every checkout there. the hooks check it before they change anything, so while it's off a commit gets no `Assisted-by` trailer and a push uploads nothing, and the hooks can stay installed. new clones and worktrees don't get hooks until `setup` runs again. the script pins assisted-by to the same version as the hooks it installs; bump `VERSION` and rerun `setup` to update both.
+the upload rule for the `assistant-ui` org is the switch: without it the hooks change nothing, and tracehub's setup adds or revokes it. `TRACEHUB=0` skips them for one command. the script pins tracehub to the same version as the hooks it installs; bump `VERSION` and rerun `setup` to update both.
 
 ## automation accounts for the agents
 

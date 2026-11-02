@@ -13,8 +13,8 @@ assistant-ui/assistant-ui is public. other repos here may not be (`gh repo view 
 
 ## tracehub
 
-tracehub may be on here. if so, `assisted-by` git hooks add an `Assisted-by: <id>` trailer to commits made in agent sessions, and `git push` uploads the redacted session so maintainers can review the PR through it.
+tracehub is on here. its git hooks add an `Assisted-by: <link>` trailer to commits made in agent sessions, and `git push` uploads the redacted session so maintainers can review the PR through it.
 
 - keep `Assisted-by:` trailers through amends, rebases, squashes, and rewords. never write or change one yourself.
-- on top of my global hook rules: no `ASSISTED_BY=0` and no `assisted-by` commands. turning tracehub on or off is my call.
-- leave the `<!-- assisted-by:start -->` to `<!-- assisted-by:end -->` block in PR descriptions alone.
+- on top of my global hook rules: no `TRACEHUB=0` and no `tracehub` or `config:tracehub` commands. turning tracehub on or off is my call.
+- leave the `<!-- tracehub:start -->` to `<!-- tracehub:end -->` block (`assisted-by` on older PRs) in PR descriptions alone.

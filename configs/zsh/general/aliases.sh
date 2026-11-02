@@ -101,7 +101,6 @@ alias toggle:ai-github='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-acco
 alias toggle:ai-tangled='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" tangled toggle'
 # tracehub for my work checkouts under ~/GitHub/assistant-ui, nowhere else
 alias config:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh"'
-alias toggle:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh" toggle'
 # Infisical's work login, as its own profile bound to ~/GitHub/assistant-ui, so
 # commands there use it whichever profile is the default
 alias config:infisical='infisical login --save-as assistant-ui && infisical profile bind assistant-ui "${PERSONAL_GITHUB_DIR:-$HOME/GitHub}/assistant-ui"'
