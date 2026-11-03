@@ -4,8 +4,9 @@ using, in one or more repos. Prints a report; --apply removes what the report
 marks "remove" and "clean build", rechecking each item right before it acts.
 
 Never touched: anything with uncommitted files, commits the default branch
-doesn't have, a running process inside, or ignored files that aren't build
-output (those are listed under "review" until --include names them).
+doesn't have, a running process inside, a Claude Code session that could still
+be resumed there, or ignored files that aren't build output (those are listed
+under "review" until --include names them).
 """
 
 import argparse
@@ -33,6 +34,10 @@ DISPOSABLE_SUFFIXES = (".log", ".tsbuildinfo")
 FRESH_SECONDS = 3 * 86400
 # build output written this recently probably belongs to a build in progress
 BUILDING_SECONDS = 3600
+# a Claude Code session that wrote its transcript this recently may still be
+# resumed, which needs its worktree. 3 days spans a restart, a night, or a
+# weekend away; past that it's unlikely to come back and the disk matters more
+RESUMABLE_SECONDS = 3 * 86400
 
 
 def run(cmd, cwd=None, check=True):
@@ -101,6 +106,33 @@ def inside(path, procs):
     root = os.path.realpath(path)
     return [(pid, cmd) for pid, cmd, cwd in procs
             if pid not in SELF and (cwd == root or cwd.startswith(root + os.sep))]
+
+
+def claude_sessions(path):
+    """(seconds since it last wrote, session id) for each Claude Code session
+    started in path or below it that could still be resumed, newest first.
+    Claude Code keeps transcripts in ~/.claude/projects/<cwd with every
+    non-alphanumeric character as "-", cut to 200 characters plus "-<hash>"
+    when longer>, and clauth's profiles link their projects dir there too."""
+    key = re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(path))[:200]
+    # the session running this cleanup doesn't keep its own worktree
+    own = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    found = []
+    try:
+        dirs = [d for d in (Path.home() / ".claude" / "projects").iterdir()
+                if d.name == key or d.name.startswith(key + "-")]
+    except OSError:
+        return found
+    for transcript in (t for d in dirs for t in d.glob("*.jsonl")):
+        idle = time.time() - transcript.stat().st_mtime
+        if transcript.stem != own and idle < RESUMABLE_SECONDS:
+            found.append((idle, transcript.stem))
+    return sorted(found)
+
+
+def ago(seconds):
+    minutes = int(seconds // 60)
+    return f"{minutes}m" if minutes < 60 else f"{minutes // 60}h" if minutes < 2880 else f"{minutes // 1440}d"
 
 
 def lock_reason(reason):
@@ -296,6 +328,10 @@ def survey(repo, procs):
         reasons = []
         if live:
             reasons.append("in use by " + ", ".join(f"{cmd} ({pid})" for pid, cmd in live[:3]))
+        sessions = claude_sessions(path)
+        if sessions:
+            idle, session = sessions[0]
+            reasons.append(f"a Claude session used it {ago(idle)} ago ({session[:8]})")
         dirty = len((git(path, "status", "--porcelain") or "").splitlines())
         if dirty:
             reasons.append(plural(dirty, "uncommitted file"))
@@ -397,7 +433,7 @@ def apply(repo, items):
         if item["kind"] == "worktree" and item.get("head"):
             path = item["path"]
             now_head = git(path, "rev-parse", "HEAD")
-            if now_head != item["head"] or inside(path, procs):
+            if now_head != item["head"] or inside(path, procs) or claude_sessions(path):
                 log(f"skipped {path}: changed since the survey")
                 continue
             kib = size_kib(path)

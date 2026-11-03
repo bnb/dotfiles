@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -43,11 +44,13 @@ class Fixture(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.root = Path(os.path.realpath(tmp.name))
-        git_env = {"GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_NOSYSTEM": "1",
-                   "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com",
-                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.com"}
-        self._env = {k: os.environ.get(k) for k in git_env}
-        os.environ.update(git_env)
+        # a home of its own keeps this machine's Claude transcripts out
+        fixture_env = {"GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_NOSYSTEM": "1",
+                       "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com",
+                       "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.com",
+                       "HOME": str(self.root / "home"), "CLAUDE_CODE_SESSION_ID": "own-session"}
+        self._env = {k: os.environ.get(k) for k in fixture_env}
+        os.environ.update(fixture_env)
         self.addCleanup(lambda: [os.environ.pop(k) if v is None else os.environ.__setitem__(k, v) for k, v in self._env.items()])
 
         origin = self.root / "origin.git"
@@ -64,6 +67,14 @@ class Fixture(unittest.TestCase):
         path = self.root / name
         sh(self.repo, "git", "worktree", "add", "-q", "-b", name, str(path), base, env=env)
         return path
+
+    def transcript(self, project, session, age=0):
+        """A Claude Code session's transcript under ~/.claude/projects/<project>."""
+        path = self.root / "home" / ".claude" / "projects" / project / f"{session}.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}\n")
+        stamp = time.time() - age
+        os.utime(path, (stamp, stamp))
 
     def merge(self, branch):
         sh(self.repo, "git", "merge", "-q", "--no-ff", "-m", f"merge {branch}", branch)
@@ -169,8 +180,8 @@ class Fixture(unittest.TestCase):
         self.assertEqual(branches, {"main", "dirty", "unmerged", "fresh", "busy", "locked", "gone-unmerged", "gone-fresh", "pushed-ahead"})
 
     def test_apply_skips_worktrees_that_changed(self):
-        edited, committed = self.worktree("edited"), self.worktree("committed")
-        for path in (edited, committed):
+        edited, committed, resumed = self.worktree("edited"), self.worktree("committed"), self.worktree("resumed")
+        for path in (edited, committed, resumed):
             commit(path, path.name)
             self.merge(path.name)
         sh(self.repo, "git", "branch", "moved", "main", env=OLD_ENV)
@@ -183,11 +194,12 @@ class Fixture(unittest.TestCase):
         commit(committed, "committed after the survey")
         sh(self.repo, "git", "branch", "-f", "moved", "unmerged")
         os.utime(build)
+        self.transcript(re.sub(r"[^A-Za-z0-9]", "-", str(resumed)), "resumed-after-the-survey")
         cleanup.apply(repo, items)
         branches = sh(self.repo, "git", "branch", "--format=%(refname:short)").split()
-        for path in (edited, committed, build):
+        for path in (edited, committed, resumed, build):
             self.assertTrue(path.exists(), path)
-        for branch in ("edited", "committed", "moved"):
+        for branch in ("edited", "committed", "resumed", "moved"):
             self.assertIn(branch, branches)
 
     def test_human_report(self):
@@ -271,6 +283,37 @@ class Fixture(unittest.TestCase):
         out = sh(merged, "sh", "-c", f"{sys.executable} {SCRIPT} --apply --no-fetch")
         self.assertFalse(merged.exists())
         self.assertIn("freed 3M", out)
+
+    def test_resumable_claude_session_keeps_its_worktree(self):
+        # like .claude/worktrees/bnb+changelog-fragments after a restart: merged, clean,
+        # nothing running inside, but its session can still be resumed from there
+        base = self.root / ".claude" / "worktrees"
+        names = ("bnb+changelog-fragments", "sub", "long-" + "x" * 150, "old", "own")
+        resumable, sub, long, old, own = paths = [base / name for name in names]
+        for path in paths:
+            sh(self.repo, "git", "worktree", "add", "-q", "-b", path.name, str(path))
+            commit(path, f"{path.name}.txt")
+            self.merge(path.name)
+        prefix = re.sub(r"[^A-Za-z0-9]", "-", str(self.root)) + "--claude-worktrees-"
+        self.assertGreater(len(prefix + long.name), 200)
+        self.transcript(prefix + "bnb-changelog-fragments", "8fdfcf79-e9f2-4684", age=2 * 3600)
+        # a session started in a subdirectory, and one whose dir name Claude Code cut short
+        self.transcript(prefix + "sub-packages-web", "5ab0c1d2-0000-0000")
+        self.transcript((prefix + long.name)[:200] + "-1x2y3z", "10ab10ab-0000-0000", age=50 * 3600)
+        self.transcript(prefix + "old", "01d01d01-0000-0000", age=4 * 86400)
+        self.transcript(prefix + "own", "own-session")
+
+        items, _ = self.run_script("--no-fetch")
+        actual = {p.name: (items[str(p)]["action"], items[str(p)]["why"]) for p in paths}
+        self.assertEqual(actual, {
+            resumable.name: ("keep", "a Claude session used it 2h ago (8fdfcf79)"),
+            sub.name: ("keep", "a Claude session used it 0m ago (5ab0c1d2)"),
+            long.name: ("keep", "a Claude session used it 2d ago (10ab10ab)"),
+            old.name: ("remove", "merged into origin/main"),
+            own.name: ("remove", "merged into origin/main"),
+        })
+        self.run_script("--apply", "--no-fetch")
+        self.assertEqual([p.exists() for p in paths], [True, True, True, False, False])
 
     def test_merged_into_unpushed_local_main(self):
         local = self.worktree("local")
