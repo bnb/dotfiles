@@ -11,6 +11,7 @@ me. It's all idempotent, so re-running it on a machine that's already set up is 
 - writes a `~/.zshrc` with the right `PERSONAL_SETUP_*` flags for the platform, and a `source` line pointing at [configs/zsh/.zshrc](./configs/zsh/.zshrc)
 - writes a `~/.gitconfig` that `[include]`s the repo's [.gitconfig](./.gitconfig), so whatever `git config --global` writes stays out of the repo
 - symlinks [configs/tg/config.toml](./configs/tg/config.toml) to `~/.config/tg/config.toml`
+- symlinks [configs/git/ignore](./configs/git/ignore) to `~/.config/git/ignore`, the global git excludes
 - leaves `~/.npmrc` alone: zsh reads the repo's [.npmrc](./.npmrc) as npm's global config instead, and `config:npm` copies it into `~/.npmrc` for npm started anywhere else
 - writes the 1Password commit-signing config into `~/.gitconfig.local`, but only on a machine where `op-ssh-sign` actually exists
 - on a machine with `~/GitHub/assistant-ui`, symlinks the keys work repos push with, mine and the GitHub bot's, from [configs/git](./configs/git) into `~/.ssh`

@@ -1233,6 +1233,7 @@ finalize_shell_config() {
   write_zshrc "$@" || true
   write_gitconfig || true
   link_dotfile configs/tg/config.toml "${XDG_CONFIG_HOME:-$HOME/.config}/tg/config.toml" || true
+  link_dotfile configs/git/ignore "${XDG_CONFIG_HOME:-$HOME/.config}/git/ignore" || true
   write_gitconfig_local || true
   write_ssh_config || true
   wire_ai_accounts || true

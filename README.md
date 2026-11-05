@@ -68,7 +68,7 @@ one gotcha worth writing down, because I've been caught by it: `git config --glo
   * [./configs/ai](./configs/ai): config for the AI coding agents: putting the agents on my automation accounts instead of mine (Claude Code outside work on GitHub's, and both agents on @bot.bnb.im on Tangled), my instructions for them (with extra ones for my work repos), keeping Claude in VS Code on my work account and the desktop app on mine, the skills they share, and tracehub's git hooks for those repos. its [README.md](./configs/ai/README.md) explains how.
   * [./configs/tg](./configs/tg): config for `tg`, the Tangled CLI, symlinked to `~/.config/tg/config.toml` by `setup.sh`. it pins my own account, so `tg` never acts as whichever account happened to log in last.
   * [.gitconfig](./.gitconfig): my basic .gitconfig, included from `~/.gitconfig`.
-  * [./configs/git](./configs/git): the work git identities for the assistant-ui org's repos, mine and the GitHub bot's.
+  * [./configs/git](./configs/git): the work git identities for the assistant-ui org's repos, mine and the GitHub bot's, and my global git excludes, symlinked to `~/.config/git/ignore` by `setup.sh`, which keep `.claude/` out of every repo.
   * [.npmrc](./.npmrc): my basic .npmrc, which zsh reads as npm's global config (`$NPM_CONFIG_GLOBALCONFIG`).
   * [oneshot.md](./oneshot.md): what gets installed, and what has to be done by hand.
   * [./setup](./setup): the per-platform halves of `setup.sh` and the library they share, [Television's setup](./setup/television.sh), and the WSL distro-upgrade scripts.
