@@ -51,6 +51,8 @@ my own skills live in [skills/](./skills): rules from my instructions that only 
 - [rust](./skills/rust/SKILL.md): my Rust conventions, and keeping `target/` dirs from filling the disk.
 - [ui](./skills/ui/SKILL.md): how I want UI built and checked, and the harness every app gets.
 
+setup.sh installs Roast's skill with `roast skill install`, into `~/.agents/skills` with a symlink from `~/.claude/skills`, and refreshes it on every run. it tells agents when to run a review and how to read the findings. [oneshot.md](../../oneshot.md#roast-both-platforms) covers the config and the key it needs.
+
 [setup/television.sh](../../setup/television.sh) puts Television's own skills (`television` and `tv-*`) in the same places with `tv skills install`, and reinstalls them on every run. every Claude Code session gets them: `clauth start` runtimes link `skills` back to `~/.claude/skills` (only `--isolated` leaves them out). Codex's sandbox would block `tv` reaching its server on localhost and writing to `~/.television/artifacts`, so setup also links [codex-television.rules](./codex-television.rules) into `~/.codex/rules`, which runs the everyday `tv` commands outside the sandbox (deleting, removing channels and admin commands still ask), and sets Codex's `default_permissions` to a `television` profile: its own `:workspace` plus write access to that one directory. if `config.toml` already sets `default_permissions` or `sandbox_mode`, setup leaves it alone and prints the lines to add.
 
 a global install keeps one copy of each in `~/.agents/skills`, which Codex reads directly, and symlinks it into `~/.claude/skills`. setup skips a skill that's already installed, so updating is a separate step:

@@ -389,8 +389,13 @@ ensure_homebrew() {
 
 # Third-party taps. A formula from one of these is listed by its full name
 # (alyraffauf/tap/tg) so brew can't mistake it for something in homebrew/core.
-# alyraffauf/tap is tg, the Tangled CLI the AI agents use (configs/ai).
-BREW_TAPS="alyraffauf/tap"
+# alyraffauf/tap is tg, the Tangled CLI the AI agents use (configs/ai), and
+# bluesky-social/tap is Roast.
+BREW_TAPS="alyraffauf/tap bluesky-social/tap"
+
+# Casks every platform gets. Roast only ships as a cask, and its cask has
+# linux builds, which Homebrew installs there too, checksums and all.
+SHARED_CASKS="bluesky-social/tap/roast"
 
 # Formulae only my work checkouts need, so only a machine with $WORK_DIR gets
 # them. infisical supplies the values work apps read in development
@@ -676,10 +681,7 @@ install_packages() {
   then
     brew_install_batch --formula $WORK_FORMULAE
   fi
-  if [ -n "${2:-}" ]
-  then
-    brew_install_batch --cask $2
-  fi
+  brew_install_batch --cask ${2:-} $SHARED_CASKS
   cargo_install_batch $CARGO_CRATES
   pnpm_global_install_batch $PNPM_GLOBALS
   agent_skills_install_batch $AGENT_SKILLS
@@ -1226,6 +1228,35 @@ PY
   done
 }
 
+# Roast, the cross-model code reviewer: configs/roast/config.yaml goes where
+# roast looks for it, which is $XDG_CONFIG_HOME/roast when that's set and
+# otherwise the OS's own config directory (on macOS that's Application
+# Support, not ~/.config). Its agent skill goes in ~/.agents/skills with Claude
+# Code's symlink to it, the same as Television's. --force because the skill
+# changes with each release, and a copy from the last one would stop it.
+setup_roast() {
+  local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+  if [ -z "${XDG_CONFIG_HOME:-}" ] && [ "$(uname -s)" = "Darwin" ]
+  then
+    config_home="$HOME/Library/Application Support"
+  fi
+  link_dotfile configs/roast/config.yaml "$config_home/roast/config.yaml" || true
+
+  log_step "installing roast's agent skill"
+  if ! command -v roast >/dev/null 2>&1
+  then
+    log_info "roast isn't installed - skipping"
+    return 0
+  fi
+  if ! roast skill install --dir "$HOME/.agents/skills" --force
+  then
+    record_failure "roast skill install"
+    return 1
+  fi
+  link_claude_skill roast
+}
+
 # Shared tail end of both platforms
 
 # usage: finalize_shell_config PERSONAL_SETUP_MACOS PERSONAL_SETUP_MACOSBREW ...
@@ -1242,4 +1273,5 @@ finalize_shell_config() {
   install_skill_tools || true
   enforce_ai_rules || true
   link_work_files || true
+  setup_roast || true
 }

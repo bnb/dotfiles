@@ -20,6 +20,7 @@ me. It's all idempotent, so re-running it on a machine that's already set up is 
 - links [configs/ai/instructions.md](./configs/ai/instructions.md) in as Claude Code's and Codex's user instructions, and on a machine with `~/GitHub/assistant-ui`, the work instructions above those checkouts
 - adds my agent guardrails (no attribution lines, pushes asking first) to Claude Code's settings and Codex's rules, and links my own skills from [configs/ai/skills](./configs/ai/skills) for both agents. details in [configs/ai](./configs/ai/README.md#guardrails)
 - on a machine with `~/GitHub/assistant-ui`, starts Claude in VS Code on the work clauth profile, so it doesn't share an account with the Claude desktop app, and on macOS keeps `clauth daemon` running under launchd. details in [configs/ai](./configs/ai/README.md#claude-accounts)
+- installs [Roast](https://github.com/bluesky-social/roast), the cross-model code reviewer, links [configs/roast/config.yaml](./configs/roast/config.yaml) to where roast reads its config, and installs its agent skill. details [below](#roast-both-platforms)
 - sets up [Television](https://television.run), the display my agents put things on: `tv` as a pnpm global, its skills for both agents, and its server as a login service (launchd or systemd). details [below](#television-both-platforms)
 
 anything it's about to replace gets copied to `<file>.backup.<timestamp>` first.
@@ -44,13 +45,13 @@ anything it's about to replace gets copied to `<file>.backup.<timestamp>` first.
 
 ### linux/WSL
 
-no casks. apt first, `APT_PACKAGES` in [setup/linux.sh](./setup/linux.sh) (`curl`, `file` and `procps` are homebrew-on-linux's own documented prerequisites), then homebrew and `LINUX_FORMULAE` from the same file.
+no casks except Roast's (see [below](#roast-both-platforms)). apt first, `APT_PACKAGES` in [setup/linux.sh](./setup/linux.sh) (`curl`, `file` and `procps` are homebrew-on-linux's own documented prerequisites), then homebrew and `LINUX_FORMULAE` from the same file.
 
 no `python3`, `git` or `git-lfs` from brew here: apt already provides them. `fnm` is the one node version manager, since it's the one `~/.zshrc` turns on here. zsh gets set as the login shell, but only if it isn't already, and it's added to `/etc/shells` first because `chsh` refuses a shell that isn't listed there.
 
 ### work formulae (both platforms)
 
-`WORK_FORMULAE` in [setup/lib/common.sh](./setup/lib/common.sh), only on a machine with `~/GitHub/assistant-ui`. right now that's `infisical`, where the work apps get their development values from. `config:infisical` signs it in (step 9 below).
+`WORK_FORMULAE` in [setup/lib/common.sh](./setup/lib/common.sh), only on a machine with `~/GitHub/assistant-ui`. right now that's `infisical`, where the work apps get their development values from. `config:infisical` signs it in (step 10 below).
 
 ### cargo crates (both platforms)
 
@@ -68,6 +69,16 @@ two things to know about it:
 ### agent skills (both platforms)
 
 `AGENT_SKILLS` in [setup/lib/common.sh](./setup/lib/common.sh), installed for Claude Code and Codex with the Skills CLI. what each one does, and how to update them: [configs/ai](./configs/ai/README.md#skills).
+
+### Roast (both platforms)
+
+[Roast](https://github.com/bluesky-social/roast) reviews a diff with two models from different families: a finder proposes bugs and a verifier rechecks each one against the code. it only ships as a cask, in `bluesky-social/tap`, which `setup.sh` taps and trusts like `tg`'s. the cask has linux builds too, so `SHARED_CASKS` in [setup/lib/common.sh](./setup/lib/common.sh) installs it on both platforms, and brew checks the release's SHA-256 either way.
+
+[configs/roast/config.yaml](./configs/roast/config.yaml) gets symlinked to where roast looks: `$XDG_CONFIG_HOME/roast/config.yaml` when that's set, otherwise `~/Library/Application Support/roast/config.yaml` on macOS and `~/.config/roast/config.yaml` on linux. both roles go through tokenparty with one key, GPT as the finder and Claude as the verifier. the key isn't in the file: roast reads it from `$TOKENPARTY_API_KEY` (step 9 below).
+
+`roast skill install --dir ~/.agents/skills --force` puts its skill where Codex reads it, and Claude Code gets a symlink to it, the same as Television's. `--force` because the skill changes with each release. `roast doctor` checks all of it. it runs a short tool loop against each model, so it isn't free.
+
+roast asks once per repo, on the first interactive review, whether to install its pre-commit gate. setup never turns that on.
 
 ### Television (both platforms)
 
@@ -87,15 +98,16 @@ Roughly in the order I do it:
 6. **`config:ai-tangled login`**: the same for Tangled, as @bot.bnb.im. the browser goes to the bot's PDS to sign in as it. `tg auth login bnb.im` logs me in too; the `tg` config pins my account, so the terminal stays me whichever logged in last.
 7. **`opencode auth login`**: authenticate opencode against a model provider; it's installed by brew but can't do anything until it has credentials, and those are per-machine and secret, so they never live in this repo.
 8. **`vercel login`**: sign the Vercel CLI in. the token lives in its own per-machine config, so it never goes in this repo.
-9. **`config:infisical`**, on a machine with `~/GitHub/assistant-ui`: signs the Infisical CLI in with my work account (pick Infisical Cloud (US) when it asks), saved as the `assistant-ui` login profile, and binds that directory to it. commands under it use that login even if another Infisical profile is the default.
-10. **switch this repo's remote to SSH** if I plan to push from the machine; `setup.sh` clones over HTTPS so it works before any of the above exists.
-11. **sign into everything**: Slack, Discord, Spotify, Zoom, Arc, Chrome Canary, VS Code Insiders (settings sync does the rest).
-12. **App Store apps**: homebrew can't install these, so they're manual. anything I've bought rather than brewed lives there.
-13. **Docker Desktop**: has to be opened once to finish its own install and grant its privileged helper.
-14. **Karabiner-Elements**: needs input-monitoring permission in System Settings, then its own config imported.
-15. **macOS system settings**: the trackpad/keyboard/dock tweaks I redo from memory every time. `setup.sh` only handles two: `DSDontWriteNetworkStores`, which stops `.DS_Store` files appearing on network shares, and no idle sleep on AC power (`pmset -c sleep 0`), so long agent runs don't stall when I step away.
-16. **Television's desktop app**: download it from [dl.todesktop.com](https://dl.todesktop.com/260923p52umxx/mac/dmg/arm64) (Apple Silicon only), then paste the link `tv links` prints into its connect screen. it updates itself after that.
-17. **[the Stream Deck profile](./configs/streamdeck)**: import it from the Stream Deck app; there's no CLI for it.
+9. **`TOKENPARTY_API_KEY`**: make a tokenparty key for Roast and export it where roast runs, then `roast doctor`. it's per-machine and secret, so it never lives in this repo.
+10. **`config:infisical`**, on a machine with `~/GitHub/assistant-ui`: signs the Infisical CLI in with my work account (pick Infisical Cloud (US) when it asks), saved as the `assistant-ui` login profile, and binds that directory to it. commands under it use that login even if another Infisical profile is the default.
+11. **switch this repo's remote to SSH** if I plan to push from the machine; `setup.sh` clones over HTTPS so it works before any of the above exists.
+12. **sign into everything**: Slack, Discord, Spotify, Zoom, Arc, Chrome Canary, VS Code Insiders (settings sync does the rest).
+13. **App Store apps**: homebrew can't install these, so they're manual. anything I've bought rather than brewed lives there.
+14. **Docker Desktop**: has to be opened once to finish its own install and grant its privileged helper.
+15. **Karabiner-Elements**: needs input-monitoring permission in System Settings, then its own config imported.
+16. **macOS system settings**: the trackpad/keyboard/dock tweaks I redo from memory every time. `setup.sh` only handles two: `DSDontWriteNetworkStores`, which stops `.DS_Store` files appearing on network shares, and no idle sleep on AC power (`pmset -c sleep 0`), so long agent runs don't stall when I step away.
+17. **Television's desktop app**: download it from [dl.todesktop.com](https://dl.todesktop.com/260923p52umxx/mac/dmg/arm64) (Apple Silicon only), then paste the link `tv links` prints into its connect screen. it updates itself after that.
+18. **[the Stream Deck profile](./configs/streamdeck)**: import it from the Stream Deck app; there's no CLI for it.
 
 ## upgrading an old WSL box
 
