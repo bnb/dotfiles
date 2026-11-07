@@ -1,0 +1,28 @@
+# Roast's user config (github.com/bluesky-social/roast), linked in by setup.sh.
+#
+# The point of Roast is a finder and a verifier from different model families,
+# so one doesn't wave through what the other got wrong. Both go through
+# tokenparty, which serves Claude and GPT behind one key. Most of what I review
+# was written by Claude, so GPT finds and Claude checks.
+#
+# No key in here: Roast reads it from $TOKENPARTY_API_KEY when a role runs.
+
+version: 1
+
+inference_profiles:
+  gpt:
+    endpoint: https://api.tokenparty.net/v1
+    model: gpt-6-astra
+    protocol: responses
+    api_key_env: TOKENPARTY_API_KEY
+  claude:
+    endpoint: https://api.tokenparty.net/v1
+    model: claude-opus-5-5
+    protocol: anthropic
+    api_key_env: TOKENPARTY_API_KEY
+
+roles:
+  finder:
+    profile: gpt
+  verifier:
+    profile: claude
