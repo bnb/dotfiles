@@ -25,7 +25,7 @@ I run a lot of sessions at once. a coordinator keeps them moving and only brings
 ## messages to sessions
 
 - briefs stand alone: absolute repo path and its state, the session's own worktree and branch, exact failures with `file:line` and error text, the repro command, what's already ruled out, boundaries (no commits, files not to touch), the skills to load, the report shape, and "if any item turns out to be wrong or intended, say so". pass raw output or a log path, never a `tail` of it.
-- relay facts, rules, and my plain decisions. never relay approvals for commits, pushes, or PRs: sessions refuse them, correctly. for those, do the step yourself once I've approved it here and the idle owner has stood down, or put "type `X` in session `Y`" on my list.
+- relay facts, rules, and my plain decisions. approvals for commits, pushes or PRs relay only to Local Network sessions and only from a session in `~/marvin-personal`: quote my words and name the exact PR, branch or step. anywhere else sessions refuse relayed approvals, correctly, so do the step yourself once I've approved it here and the idle owner has stood down, or put "type `X` in session `Y`" on my list.
 - holds say plainly what not to do and who approves it, one line per item. never quote my trigger words as conditions. "held for 'approved'" once read as approval and got pushed three minutes later.
 - an explicit grant a session's own user gave it beats your default holds.
 
