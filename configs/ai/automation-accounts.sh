@@ -42,9 +42,11 @@
 # authentication key - and `apply` finds them by asking GitHub which keys the
 # account has and the 1Password agent which of those it holds. Agents sign
 # every commit with the first, and push over SSH with only the second, so my
-# personal key never gets offered. Without 1Password, or before those keys are
-# in it, GitHub falls back to what Tangled always does: unsigned commits, and
-# SSH remotes sent over HTTPS, since SSH would authenticate with my personal key.
+# personal key never gets offered. On Tangled, `apply` asks the same of the
+# bot's Tangled keys, and agents sign with the first one 1Password holds.
+# Without 1Password, or before a key is in it, commits go unsigned, and on both
+# forges SSH remotes go over HTTPS, since SSH would authenticate with my
+# personal key.
 #
 # Has to run under bash 3.2: setup.sh calls `apply`, and on a fresh mac that's
 # the only bash there is.
@@ -70,6 +72,7 @@ AI_SSH_CONFIG="$AI_AGENTS_DIR/ssh_config"
 AI_GITHUB_AUTH_KEY="$AI_AGENTS_DIR/github-auth.pub"
 AI_GITHUB_SIGNING_KEY="$AI_AGENTS_DIR/github-signing.pub"
 AI_GITHUB_DIR="${AI_GITHUB_DIR:-$CONFIG_HOME/gh-automation}"
+AI_TANGLED_SIGNING_KEY="$AI_AGENTS_DIR/tangled-signing.pub"
 AI_TANGLED_HANDLE="${AI_TANGLED_HANDLE:-bot.bnb.im}"
 
 # Always the real ~/.claude, never $CLAUDE_CONFIG_DIR: inside a `clauth start`
@@ -180,17 +183,16 @@ op_agent_sock() {
   done
 }
 
-# usage: op_github_key <socket> <login> keys|ssh_signing_keys
+# usage: <"<type> <key>" lines> | op_agent_key <socket>
 #
-# The first key in the 1Password agent that GitHub has on file for <login> as
-# an authentication key (keys) or a signing key (ssh_signing_keys), as
-# "<type> <key> <1Password item title>". Empty when there isn't one. Both lists
-# are public, so this works whichever account gh is logged in as. Keys pinned
-# in configs/git are skipped: they're <login>'s work keys, for work repos only.
-op_github_key() {
+# The first key in the 1Password agent that's also on stdin, as
+# "<type> <key> <1Password item title>". Empty when there isn't one. Keys
+# pinned in configs/git are skipped: they're the bots' work keys, for work
+# repos only.
+op_agent_key() {
   local registered
 
-  registered="$(gh_automation api "users/$2/$3" --jq '.[].key' 2>/dev/null | awk '{ print $1, $2 }')"
+  registered="$(awk '{ print $1, $2 }')"
   [ -n "$registered" ] || return 0
 
   SSH_AUTH_SOCK="$1" ssh-add -L 2>/dev/null | while read -r type key title
@@ -202,6 +204,32 @@ op_github_key() {
       break
     fi
   done
+}
+
+# usage: op_github_key <socket> <login> keys|ssh_signing_keys
+#
+# op_agent_key for the keys GitHub has on file for <login> as an
+# authentication key (keys) or a signing key (ssh_signing_keys). Both lists
+# are public, so this works whichever account gh is logged in as.
+op_github_key() {
+  gh_automation api "users/$2/$3" --jq '.[].key' 2>/dev/null | op_agent_key "$1"
+}
+
+# usage: op_tangled_key <socket> <handle>
+#
+# op_agent_key for the SSH keys <handle> has on Tangled. Tangled has one kind
+# of key, and checks commit signatures against the same list. The list is
+# public, so it's asked for as me.
+op_tangled_key() {
+  tg_personal ssh-key list "$2" --json 2>/dev/null | python3 -c '
+import json, sys
+try:
+    items = (json.load(sys.stdin) or {}).get("items") or []
+except ValueError:
+    items = []
+for item in items:
+    print(item.get("key", ""))
+' 2>/dev/null | op_agent_key "$1"
 }
 
 # usage: edit_env json|toml:<table> set|remove|check <file> KEY=VALUE...
@@ -569,6 +597,35 @@ work_includes() {
     done
 }
 
+# usage: signed_section <signing key> <op-ssh-sign>
+#
+# Signs every commit and tag with <signing key>, an op_agent_key line, through
+# 1Password. 1Password asks before it signs for an app it hasn't yet - an
+# agent's commit waits on that.
+signed_section() {
+  cat <<EOF
+[user]
+	signingkey = key::$(echo "$1" | cut -d ' ' -f 1-2)
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = $2
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true
+EOF
+}
+
+unsigned_section() {
+  cat <<EOF
+[commit]
+	gpgsign = false
+[tag]
+	gpgsign = false
+EOF
+}
+
 # usage: write_github_gitconfig <login> <id> <path to gh> <signing key> <op-ssh-sign> <auth key>
 #
 # The keys are "<type> <key> <1Password item title>" lines from op_github_key.
@@ -596,28 +653,17 @@ EOF
     then
       cat <<EOF
 # Signed with "${4#* * }", $1's signing key in 1Password, so GitHub
-# marks the commits Verified. 1Password asks before it signs for an app it
-# hasn't yet - an agent's commit waits on that.
-[user]
-	signingkey = key::$(echo "$4" | cut -d ' ' -f 1-2)
-[gpg]
-	format = ssh
-[gpg "ssh"]
-	program = $5
-[commit]
-	gpgsign = true
+# marks the commits Verified.
 EOF
+      signed_section "$4" "$5"
     else
       cat <<EOF
 # Unsigned: the signing key in ~/.gitconfig.local is my personal account's, so
 # GitHub would mark these commits Unverified - and 1Password would stop the
 # agent to ask for Touch ID on every one. \`apply\` signs with $1's own key
 # once it's in 1Password.
-[commit]
-	gpgsign = false
-[tag]
-	gpgsign = false
 EOF
+      unsigned_section
     fi
 
     cat <<EOF
@@ -682,7 +728,7 @@ EOF
 
 # usage: write_public_key <key> <file>
 #
-# One of op_github_key's lines as a public key file, or no file for no key.
+# One of op_agent_key's lines as a public key file, or no file for no key.
 # `status` reads them back.
 write_public_key() {
   local tmp
@@ -746,7 +792,10 @@ tangled_includeifs() {
   done
 }
 
-# usage: write_tangled_gitconfig <handle> <did> <path to tg>
+# usage: write_tangled_gitconfig <handle> <did> <path to tg> <signing key> <op-ssh-sign>
+#
+# The signing key is an op_agent_key line. Without one the bot's commits go
+# unsigned.
 write_tangled_gitconfig() {
   local tmp host
 
@@ -780,24 +829,37 @@ EOF
 
 # Commit as $1 in any repo with a Tangled remote. Tangled credits a commit to
 # the account whose DID is the committer email, so no address is needed.
-# Unsigned, for the same reason as the GitHub fragment.
 EOF
     tangled_includeifs tangled-identity.gitconfig
   } > "$tmp"
   install_file "$tmp" "$AI_AGENTS_DIR/tangled.gitconfig" || return 1
 
   tmp="$(new_tmp)" || return 1
-  cat > "$tmp" <<EOF
+  {
+    cat <<EOF
 # Generated by configs/ai/automation-accounts.sh - \`config:ai-tangled apply\`
 # rewrites it. Included by ./tangled.gitconfig, for repos with a Tangled remote.
 [user]
 	name = $1
 	email = $2
-[commit]
-	gpgsign = false
-[tag]
-	gpgsign = false
+
 EOF
+    if [ -n "$4" ]
+    then
+      cat <<EOF
+# Signed with one of $1's Tangled keys, from 1Password:
+# "${4#* * }". Tangled marks the commits verified.
+EOF
+      signed_section "$4" "$5"
+    else
+      cat <<EOF
+# Unsigned: the signing key in ~/.gitconfig.local is my personal account's,
+# which isn't on $1's Tangled account. \`apply\` signs with one of
+# its own Tangled keys once 1Password holds it.
+EOF
+      unsigned_section
+    fi
+  } > "$tmp"
   install_file "$tmp" "$AI_AGENTS_DIR/tangled-identity.gitconfig"
 }
 
@@ -976,7 +1038,7 @@ cmd_tangled_login() {
 }
 
 cmd_tangled_apply() {
-  local did terminal failed=0
+  local did terminal signer sock signing="" failed=0
 
   need tg
   need git
@@ -998,8 +1060,32 @@ cmd_tangled_apply() {
   fi
 
   say "agents will act as $AI_TANGLED_HANDLE ($did) on Tangled"
+
+  # The bot's signing key, if 1Password has one of its Tangled keys. A missing
+  # one fails the run, as on GitHub, but the fragment is still written unsigned.
+  signer="$(resolve_op_ssh_sign || true)"
+  sock="$(op_agent_sock)"
+  if [ -z "$signer" ]
+  then
+    say "1Password isn't installed here, so agents' Tangled commits go unsigned"
+  elif [ -z "$sock" ]
+  then
+    warn "1Password's SSH agent isn't running - turn it on in 1Password > Settings > Developer and run apply again. until then agents' Tangled commits go unsigned"
+    failed=1
+  else
+    signing="$(op_tangled_key "$sock" "$AI_TANGLED_HANDLE")"
+    if [ -n "$signing" ]
+    then
+      say "agents will sign Tangled commits with \"${signing#* * }\" from 1Password"
+    else
+      warn "the 1Password agent has none of $AI_TANGLED_HANDLE's Tangled keys, so agents' Tangled commits go unsigned. is 1Password unlocked, and is the key in a vault the SSH agent uses? new key: add it to 1Password, then \`TG_ACCOUNT=$did tg ssh-key add <its .pub file>\`. then run apply again"
+      failed=1
+    fi
+  fi
+
   write_top_gitconfigs || die "couldn't write $AI_AGENTS_DIR's gitconfigs"
-  write_tangled_gitconfig "$AI_TANGLED_HANDLE" "$did" "$(command -v tg)" || die "couldn't write the Tangled git config"
+  write_public_key "$signing" "$AI_TANGLED_SIGNING_KEY" || die "couldn't write $AI_TANGLED_SIGNING_KEY"
+  write_tangled_gitconfig "$AI_TANGLED_HANDLE" "$did" "$(command -v tg)" "$signing" "$signer" || die "couldn't write the Tangled git config"
 
   with_tangled_env "$did" wire claude-outside set "GIT_CONFIG_GLOBAL=$AI_GITCONFIG" || failed=1
   with_tangled_env "$did" wire claude-work set "GIT_CONFIG_GLOBAL=$AI_GITCONFIG_WITHOUT_GITHUB" || failed=1
@@ -1053,7 +1139,7 @@ unwire() {
 
   case "$FORGE" in
     github) rm -f "$AI_AGENTS_DIR/github.gitconfig" "$AI_SSH_CONFIG" "$AI_GITHUB_AUTH_KEY" "$AI_GITHUB_SIGNING_KEY" ;;
-    tangled) rm -f "$AI_AGENTS_DIR/tangled.gitconfig" "$AI_AGENTS_DIR/tangled-identity.gitconfig" ;;
+    tangled) rm -f "$AI_AGENTS_DIR/tangled.gitconfig" "$AI_AGENTS_DIR/tangled-identity.gitconfig" "$AI_TANGLED_SIGNING_KEY" ;;
   esac
   if [ -n "$last" ]
   then
@@ -1195,6 +1281,13 @@ cmd_status() {
       row "agents" "not logged in - config:ai-tangled login"
     fi
     row "agents' git" "$(identity "$AI_AGENTS_DIR/tangled-identity.gitconfig")"
+    if [ -f "$AI_TANGLED_SIGNING_KEY" ]
+    then
+      row "signs with" "$(key_summary "$AI_TANGLED_SIGNING_KEY")"
+    elif [ -f "$AI_AGENTS_DIR/tangled-identity.gitconfig" ]
+    then
+      row "signs with" "nothing - unsigned"
+    fi
   else
     row "tg" "not installed"
   fi
