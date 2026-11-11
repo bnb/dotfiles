@@ -99,7 +99,7 @@ alias config:ai-tangled='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-acc
 # flip the agents between each forge's bot and my own account
 alias toggle:ai-github='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" github toggle'
 alias toggle:ai-tangled='bash "$PERSONAL_DOTFILES_PATH/configs/ai/automation-accounts.sh" tangled toggle'
-# tracehub for my work checkouts under ~/GitHub/assistant-ui, nowhere else
+# checks tracehub's git hooks for my work repos
 alias config:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh"'
 # Infisical's work login, as its own profile bound to ~/GitHub/assistant-ui, so
 # commands there use it whichever profile is the default

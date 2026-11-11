@@ -16,3 +16,17 @@
 # the private key that matches.
 [core]
 	sshCommand = ssh -o IdentitiesOnly=yes -i ~/.ssh/assistant-ui.pub
+
+# Tracehub's commit and push hooks, for every work repo, clone and worktree,
+# Husky or not: Git (2.54 and later) runs hooks set in config alongside the
+# repo's own hooks, so nothing gets written into each checkout. They do
+# nothing until tracehub's own setup has signed in and allowed assistant-ui.
+# Git appends the hook's arguments as "$@", which the function passes on; a
+# hook that can't run tracehub (npx offline) says so and lets git go on.
+# config:tracehub reads the version from here: bump both lines together.
+[hook "tracehub-prepare-commit-msg"]
+	event = prepare-commit-msg
+	command = "f() { npx --yes --prefer-offline tracehub@0.5.2 hook prepare-commit-msg \"$@\" </dev/null || echo 'tracehub: the prepare-commit-msg hook could not run tracehub@0.5.2' >&2; }; f"
+[hook "tracehub-pre-push"]
+	event = pre-push
+	command = "f() { npx --yes --prefer-offline tracehub@0.5.2 hook pre-push \"$@\" || echo 'tracehub: the pre-push hook could not run tracehub@0.5.2' >&2; }; f"
