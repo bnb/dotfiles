@@ -63,19 +63,21 @@ DO_NOT_TRACK=1 pnpm dlx skills update -g
 
 ## tracehub
 
-[tracehub.sh](./tracehub.sh) installs [tracehub](https://github.com/assistant-ui/tracehub)'s git hooks in my work checkouts in `~/GitHub/assistant-ui`, and never touches a repo outside it.
+[tracehub](https://github.com/assistant-ui/tracehub)'s git hooks are set in [assistant-ui.gitconfig](../git/assistant-ui.gitconfig), so every work repo gets them: anything under `~/GitHub/assistant-ui` and any clone with an assistant-ui remote, with every worktree, Husky or not, and nothing to rerun after cloning or adding a worktree. no repo outside work gets them.
 
 ```sh
 npx --yes tracehub@0.5.2 setup   # once: sign in as me, allow assistant-ui, skip the hooks step
-config:tracehub setup            # hooks in every checkout and worktree there; again after cloning or adding a worktree
-config:tracehub status           # sign-in, upload rules, and any hook that's missing or on another version
+config:tracehub setup            # checks the sign-in and git, removes the per-checkout hooks older versions of this wrote
+config:tracehub status           # sign-in, upload rules, git, and any checkout without the hooks or with an old block
 ```
 
-tracehub's own setup only installs global hooks, and it refuses them here because `~/.gitconfig` uses `[include]`. they'd reach every repo on the machine anyway, and Husky repos skip them. so `config:tracehub setup` writes tracehub's own hook blocks per repo instead: into the shared `.git/hooks` of plain repos (which covers their worktrees), and as untracked `.husky/` files in each worktree of the Husky repos, listed in the repo's `.git/info/exclude` to keep them out of commits. branches that track their own `.husky/prepare-commit-msg` or `pre-push` get it from `~/.config/husky/init.sh`, which Husky sources before every hook. that part only acts when `origin` is an assistant-ui repo.
+tracehub's own setup only installs global hooks, and it refuses them here because `~/.gitconfig` uses `[include]`. they'd reach every repo on the machine anyway, and Husky repos skip them, since Husky sets its own `core.hooksPath`. hooks set in git config (`hook.<name>.command`, Git 2.54 and later) don't care about `core.hooksPath`: git runs them first, then the repo's own hook. older git ignores them without a word, so [tracehub.sh](./tracehub.sh) checks the version (`brew upgrade git` if it's older).
+
+this used to write tracehub's hook blocks into each checkout: the shared `.git/hooks` of plain repos, untracked `.husky/` files in Husky worktrees, and `~/.config/husky/init.sh`. a worktree made after the last run got nothing, so its commits had no trace. `config:tracehub setup` removes those blocks, so the hooks don't run twice.
 
 **accounts:** tracehub is always signed in as me, whichever account `toggle:ai-github` gives the agents. tracehub keeps its own sign-in and ignores gh's and git's, so a push uploads as me whether I or an agent (as the bot or as me) made it. that's on purpose: a tracehub session belongs to the account that first uploaded it, and tracehub refuses anyone else's uploads to it, so uploads that followed the agents' account would strand any session whose commits get pushed by both. `config:tracehub setup` checks tracehub's sign-in against my own gh login and stops if it's anyone else. with the toggle on, the bot also needs write access to a work repo before Claude Code can push to it from outside a work session.
 
-the upload rule for the `assistant-ui` org is the switch: without it the hooks change nothing, and tracehub's setup adds or revokes it. `TRACEHUB=0` skips them for one command. the script pins tracehub to the same version as the hooks it installs; bump `VERSION` and rerun `setup` to update both.
+the upload rule for the `assistant-ui` org is the switch: without it the hooks change nothing, and tracehub's setup adds or revokes it. `TRACEHUB=0` skips them for one command. the version is pinned in both hook commands in `assistant-ui.gitconfig`; bump them together, and the script and its sign-in hint follow.
 
 ## automation accounts for the agents
 

@@ -1,28 +1,23 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 #
-# Tracehub's git hooks for my work checkouts under ~/GitHub/assistant-ui and
-# nowhere else.
+# Checks tracehub's git hooks for my work checkouts.
 #
 #   config:tracehub setup | status
 #
-# `setup` writes the hooks into every assistant-ui checkout and worktree
-# there; run it again after cloning or adding a worktree. Sign-in and the
-# upload rule come from tracehub's own `setup`, run once by hand.
+# The hooks themselves live in configs/git/assistant-ui.gitconfig, as hooks
+# set in git config, so every assistant-ui repo, clone and worktree gets them
+# with nothing written per checkout, Husky or not. That needs Git 2.54 or
+# later; older git ignores them. Sign-in and the upload rule come from
+# tracehub's own `setup`, run once by hand.
 #
 # No global hooks: tracehub refuses them with an [include] in ~/.gitconfig,
-# and they'd reach repos outside the directory anyway. Instead:
+# and they'd reach repos outside work anyway.
 #
-# - plain repos get the hooks in the repo's shared .git/hooks, which covers
-#   its worktrees too
-# - Husky repos (core.hooksPath .husky/_) get them as untracked files in each
-#   worktree's .husky/, listed in the repo's info/exclude
-# - Husky branches that track their own .husky/<hook> are covered by
-#   ~/.config/husky/init.sh, which Husky sources before every hook
-#
-# The hook bodies come from tracehub's own hookBlock, so they match what its
-# setup would write. An existing tracehub or assisted-by block is replaced in
-# place; other hook content is kept.
+# `setup` checks the sign-in and git, then removes the per-checkout hook
+# blocks this script used to write (in each plain repo's .git/hooks, as
+# untracked .husky/ files in Husky worktrees, and in ~/.config/husky/init.sh),
+# so the hooks don't run twice. `status` shows what's set and what's left.
 #
 # Tracehub is always signed in as me, whichever account toggle:ai-github gives
 # the agents: its sign-in is its own, not gh's or git's. A tracehub session
@@ -36,8 +31,8 @@ DIR="${PERSONAL_GITHUB_DIR:-$HOME/GitHub}/assistant-ui"
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 HUSKY_INIT="$CONFIG/husky/init.sh"
 HOOKS="prepare-commit-msg pre-push"
-# pinned like the hooks tracehub writes; bump it, then run setup again
-VERSION="0.5.2"
+GITCONFIG="$(dirname "${BASH_SOURCE[0]}")/../git/assistant-ui.gitconfig"
+MIN_GIT="2.54"
 
 case "${1:-}" in
   setup|status) ;;
@@ -46,14 +41,6 @@ case "${1:-}" in
     exit 64
     ;;
 esac
-
-# One npx per run: re-run this script with tracehub installed, rather than
-# paying npx's startup on every call. Its warnings about a checkout's pnpm
-# settings in .npmrc are noise here.
-if [ -z "${TRACEHUB_NPX:-}" ]
-then
-  TRACEHUB_NPX=1 NPM_CONFIG_LOGLEVEL=error exec npx --yes --package="tracehub@$VERSION" -- bash "$0" "$@"
-fi
 
 # shellcheck source=github-personal.sh
 . "$(dirname "${BASH_SOURCE[0]}")/github-personal.sh" || exit 1
@@ -67,6 +54,10 @@ die() {
   exit 1
 }
 
+# the tracehub version the gitconfig's hooks pin
+VERSION="$(git config --file "$GITCONFIG" --get hook.tracehub-prepare-commit-msg.command | grep -o 'tracehub@[0-9][0-9.]*' | head -n 1)"
+VERSION="${VERSION#tracehub@}"
+
 # every assistant-ui checkout directly under $DIR, and the worktrees in .wt
 checkouts() {
   local repo
@@ -79,89 +70,61 @@ checkouts() {
   done
 }
 
-# usage: block <hook>
-#
-# tracehub's own block for that hook, run through npx at $VERSION
-block() {
-  local pkg
-  pkg="$(dirname "$(command -v tracehub)")/../tracehub"
-  node --input-type=module -e "
-    import { hookBlock } from '$pkg/dist/git/hooks.js';
-    process.stdout.write(hookBlock(process.argv[1], '$VERSION', null));
-  " "$1"
+# Exits 0 when the git on PATH is at least $MIN_GIT.
+git_new_enough() {
+  local version
+  version="$(git --version | awk '{print $3}')"
+  [ "$(printf '%s\n%s\n' "$MIN_GIT" "$version" | sort -V | head -n 1)" = "$MIN_GIT" ]
 }
 
-# usage: hook_file <checkout> <hook>
+# usage: legacy_files <checkout>
 #
-# Where that checkout's hook goes, or nothing when the branch tracks its own
-# .husky/<hook> (init.sh covers it) or the checkout sets another hooksPath.
-hook_file() {
-  local hooks_path
-  hooks_path="$(git -C "$1" config --get core.hooksPath)"
+# The hook files that may still hold a block this script used to write: the
+# shared .git/hooks of a plain repo, or the untracked .husky/<hook> files of a
+# Husky worktree.
+legacy_files() {
+  local hook
 
-  case "$hooks_path" in
-    "")
-      printf '%s/%s\n' "$(git -C "$1" rev-parse --path-format=absolute --git-path hooks)" "$2"
-      ;;
-    .husky/_)
-      [ -d "$1/.husky" ] || return 0
-      git -C "$1" ls-files --error-unmatch ".husky/$2" >/dev/null 2>&1 && return 0
-      printf '%s/.husky/%s\n' "$1" "$2"
-      ;;
-  esac
+  for hook in $HOOKS
+  do
+    case "$(git -C "$1" config --get core.hooksPath)" in
+      "")
+        printf '%s/%s\n' "$(git -C "$1" rev-parse --path-format=absolute --git-path hooks)" "$hook"
+        ;;
+      .husky/_)
+        git -C "$1" ls-files --error-unmatch ".husky/$hook" >/dev/null 2>&1 || printf '%s/.husky/%s\n' "$1" "$hook"
+        ;;
+    esac
+  done
 }
 
-# usage: write_block <file> <block> <start marker> <end marker> [header]
-#
-# Puts the block in the file: in place of an existing one between the markers
-# (extended regexes), else appended, or after the header in a new file.
-write_block() {
-  local file=$1 text=$2 start=$3 end=$4 header=${5:-} next
+# usage: has_block <file> <start marker>
+has_block() {
+  grep -Eq "^$2" "$1" 2>/dev/null
+}
 
-  if [ ! -s "$file" ]
+# usage: drop_block <file> <start marker> <end marker>
+#
+# Removes the block between the markers (extended regexes), and the file too
+# when nothing but a shebang and blank lines is left.
+drop_block() {
+  local file=$1 rest
+
+  has_block "$file" "$2" || return 0
+  rest="$(awk -v start="^$2" -v end="^$3" '
+    $0 ~ start { skip = 1; next }
+    skip && $0 ~ end { skip = 0; next }
+    !skip { print }
+  ' "$file")"
+
+  if ! printf '%s\n' "$rest" | grep -Evq '^(#!.*|[[:space:]]*)$'
   then
-    next="$header$text"
-  elif grep -Eq "^$start" "$file"
-  then
-    # the block goes through ENVIRON, since awk -v would unescape its \n
-    next="$(TEXT="$text" awk -v start="^$start" -v end="^$end" '
-      $0 ~ start { printf "%s", ENVIRON["TEXT"]; skip = 1; next }
-      skip && $0 ~ end { skip = 0; next }
-      !skip { print }
-    ' "$file")"$'\n'
+    rm -f "$file"
+    say "removed $file"
   else
-    next="$(cat "$file")"$'\n\n'"$text"
+    printf '%s\n' "$rest" | cat -s > "$file"
+    say "removed tracehub's block from $file"
   fi
-
-  [ -s "$file" ] && [ "$next" = "$(cat "$file")"$'\n' ] && return 0
-  mkdir -p "$(dirname "$file")"
-  printf '%s' "$next" > "$file"
-  say "wrote $file"
-}
-
-# The hooks for Husky branches that track their own .husky/<hook>, so no
-# untracked tracehub hook can sit there. Husky sources init.sh before every
-# hook, with the hook's name in $n, its script in $s and its args in "$@".
-husky_init() {
-  local prepare push
-  prepare="$(block prepare-commit-msg | sed 's/^/    /')"
-  push="$(block pre-push | sed 's/^/    /')"
-
-  cat <<EOF
-# config:tracehub:start
-# tracehub@$VERSION for assistant-ui checkouts whose branch tracks its own
-# .husky/<hook>. Written by config:tracehub; hooks that already run tracehub
-# are skipped.
-if [ "\${HUSKY-}" != 0 ] && ! grep -q '^# tracehub:start' "\$s" 2>/dev/null &&
-  git config --get remote.origin.url 2>/dev/null | grep -Eiq 'github\\.com[:/]assistant-ui/'; then
-  if [ "\$n" = prepare-commit-msg ]; then
-$prepare
-  elif [ "\$n" = pre-push ]; then
-$push
-  fi
-fi
-# config:tracehub:end
-EOF
 }
 
 # Stops unless tracehub is signed in as my own GitHub account.
@@ -178,61 +141,63 @@ check_login() {
 }
 
 cmd_setup() {
-  local repo hook file exclude text
+  local repo file hook exclude
 
+  [ -n "$VERSION" ] || die "no tracehub hooks in $GITCONFIG"
   check_login
-  [ -n "$(checkouts | head -n 1)" ] || die "no assistant-ui checkouts in $DIR"
+  git_new_enough || die "$(command -v git) is $(git --version | awk '{print $3}'), and hooks set in config need $MIN_GIT or later - run: brew upgrade git"
 
-  for hook in $HOOKS
+  while IFS= read -r repo
   do
-    text="$(block "$hook")"$'\n' || die "couldn't get tracehub@$VERSION's $hook hook"
-    while IFS= read -r repo
+    while IFS= read -r file
     do
-      file="$(hook_file "$repo" "$hook")"
-      [ -n "$file" ] || continue
-      if [ "$file" = "$repo/.husky/$hook" ]
-      then
-        exclude="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)/info/exclude"
-        mkdir -p "$(dirname "$exclude")"
-        grep -qxF "/.husky/$hook" "$exclude" 2>/dev/null || printf '%s\n' "/.husky/$hook" >> "$exclude"
-      fi
-      write_block "$file" "$text" '# (tracehub|assisted-by):start' '# (tracehub|assisted-by):end' $'#!/bin/sh\n'
-      chmod +x "$file"
-    done < <(checkouts)
-  done
+      [ -f "$file" ] || continue
+      drop_block "$file" '# (tracehub|assisted-by):start' '# (tracehub|assisted-by):end'
+      [ -f "$file" ] && continue
+      case "$file" in
+        "$repo"/.husky/*)
+          hook="${file##*/}"
+          exclude="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)/info/exclude"
+          [ -f "$exclude" ] && grep -vxF "/.husky/$hook" "$exclude" > "$exclude.tmp" && mv "$exclude.tmp" "$exclude"
+          rm -f "$exclude.tmp"
+          ;;
+      esac
+    done < <(legacy_files "$repo")
+  done < <(checkouts)
 
-  write_block "$HUSKY_INIT" "$(husky_init)"$'\n' '# config:tracehub:start' '# config:tracehub:end'
-  say "hooks on tracehub@$VERSION for $DIR"
+  [ -f "$HUSKY_INIT" ] && drop_block "$HUSKY_INIT" '# config:tracehub:start' '# config:tracehub:end'
+  say "hooks on tracehub@$VERSION from $(cd "$(dirname "$GITCONFIG")" && pwd)/assistant-ui.gitconfig, for every assistant-ui repo"
 }
 
 cmd_status() {
-  local repo hook file login rules missing=0 total=0
+  local repo file login rules version missing=0 legacy=0 total=0
 
   login="$(jq -r '.login // empty' "$CONFIG/tracehub/auth.json" 2>/dev/null)"
   rules="$(jq -r 'keys | join(", ")' "$CONFIG/tracehub/consent.json" 2>/dev/null)"
-  printf '%-16s %s\n' "signed in as" "${login:-nobody}" "upload rules" "${rules:-none}"
+  version="$(git --version | awk '{print $3}')"
+  git_new_enough || version="$version (needs $MIN_GIT: brew upgrade git)"
+  printf '%-16s %s\n' "signed in as" "${login:-nobody}" "upload rules" "${rules:-none}" "hooks" "tracehub@${VERSION:-?}" "git" "$version"
 
   while IFS= read -r repo
   do
     total=$((total + 1))
-    for hook in $HOOKS
-    do
-      file="$(hook_file "$repo" "$hook")"
-      [ -n "$file" ] || continue
-      if ! grep -qF "tracehub@$VERSION hook $hook" "$file" 2>/dev/null
-      then
-        printf '%-16s %s\n' "needs setup" "$file"
-        missing=$((missing + 1))
-      fi
-    done
+    if [ -z "$(git -C "$repo" config --get hook.tracehub-pre-push.command)" ]
+    then
+      printf '%-16s %s\n' "no hooks" "$repo"
+      missing=$((missing + 1))
+    fi
   done < <(checkouts)
 
-  if ! grep -qF "tracehub@$VERSION hook" "$HUSKY_INIT" 2>/dev/null
-  then
-    printf '%-16s %s\n' "needs setup" "$HUSKY_INIT"
-    missing=$((missing + 1))
-  fi
-  printf '%-16s %s\n' "checkouts" "$total, $missing hook file(s) to update"
+  # a plain repo's worktrees share one .git/hooks, so count each file once
+  while IFS= read -r file
+  do
+    if has_block "$file" '# (tracehub|assisted-by):start' || has_block "$file" '# config:tracehub:start'
+    then
+      printf '%-16s %s\n' "old block" "$file"
+      legacy=$((legacy + 1))
+    fi
+  done < <({ while IFS= read -r repo; do legacy_files "$repo"; done < <(checkouts); printf '%s\n' "$HUSKY_INIT"; } | sort -u)
+  printf '%-16s %s\n' "checkouts" "$total, $missing without the hooks, $legacy old block(s) for setup to remove"
 }
 
 case "$1" in
