@@ -1,11 +1,21 @@
 ---
 name: linear
-description: How I plan cutenode/localnetwork's work in Linear (team LOC) and what you may write there without asking. Use when reading, filing or commenting on a LOC issue, picking up LOC work, writing a localnetwork pull request that closes an issue, or running or coordinating a backlog sweep there. For going through LOC's Triage queue, use linear-triage.
+description: How I plan cutenode/localnetwork's work in Linear (team LOC) and what you may write there without asking. Use whenever you start localnetwork work, find a problem, reach a conclusion worth acting on (an audit, a decision, a plan), open a localnetwork pull request, or read, file or comment on a LOC issue, pick up LOC work, or run or coordinate a backlog sweep there. For going through LOC's Triage queue, use linear-triage.
 ---
 
 # linear
 
 localnetwork's issues live in the Localnetwork team (`LOC`) of the `localnetwork` Linear workspace, synced both ways with the issues in [cutenode/localnetwork](https://github.com/cutenode/localnetwork), which is public. the repo's [CONTRIBUTING.md](https://github.com/cutenode/localnetwork/blob/main/.github/CONTRIBUTING.md#issues-and-planning) has the workflow people follow. this adds what you do. use the Linear MCP tools (`get_issue`, `list_issues`, `save_comment`, `save_issue`, `save_document`, `save_status_update`).
+
+## issues first
+
+every piece of localnetwork work runs from a LOC issue, so other people can see it and work alongside us.
+
+- file the issue when the discovery is made or the conclusion is reached (an audit finding, a bug you hit, a decision I made, a plan), before the branch exists. check `list_issues` for one that already covers it first.
+- an issue says the outcome, where in the code, and how to test it, so someone else could do it from the issue alone.
+- branch as `bnb/loc-<n>-<feature>`, and every pull request says `Fixes LOC-<n>` (or `Part of LOC-<n>` when it's one of several).
+- never use the `no-issue` label to get past the PR issue check. if work has no issue yet, file one and link it.
+- when a coordinator or another session hands you work with no issue, file it yourself before starting.
 
 ## what syncs to GitHub is public
 
@@ -21,6 +31,7 @@ don't set In Progress, In Review or Done by hand. a pull request that says `Fixe
 ## what you write without asking
 
 - **findings on an issue you worked on**: a new top-level comment (`save_comment` with `issueId`, no `parentId`). it stays in Linear. never reply in the thread whose first comment is from "GitHub" ("This comment thread is synced to a corresponding GitHub issue"): replies there are posted on the GitHub issue. I copy over what should be public.
+- **an issue for work you're starting**, as in issues first above: a new issue with labels from [labels.yml](https://github.com/cutenode/localnetwork/blob/main/.github/labels.yml).
 - **a problem you found that isn't your task**: a new issue in Triage (`save_issue`, team `LOC`, no status) with labels from [labels.yml](https://github.com/cutenode/localnetwork/blob/main/.github/labels.yml) and a `relatedTo` link to the issue you were on. a new LOC issue syncs to GitHub, so it follows the rules above.
 - **a sweep batch's report**: a document on the `Backlog sweep` project (`save_document`), titled with the branch name. the coordinator posts one project status update (`save_status_update`) when the sweep ends.
 
