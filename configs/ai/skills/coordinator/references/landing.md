@@ -12,7 +12,7 @@ many sessions have PRs open against the same repo and I want them merged in the 
 
 ## the order
 
-1. read the target branch's rules before planning: required checks, up to date before merging, approvals dismissed on push, code owners, merge queue. two coordinators got this wrong and stalled merges.
+1. read the target branch's rules before planning: required checks, up to date before merging, approvals dismissed on push, approval of the latest push, code owners, merge queue. two coordinators got this wrong and stalled merges.
 2. run `coord merge-plan --repo <repo> --base origin/main '#12=origin/bnb/a' '#13=origin/bnb/b' <worktree>...`. heads can be refs, `label=ref`, or worktree paths, so unpushed work counts too.
 3. adjust for what the tool can't see, in this priority:
    - fixes that unbreak main
@@ -25,7 +25,7 @@ many sessions have PRs open against the same repo and I want them merged in the 
 5. if most pairs conflict on the same hot files (a CHANGELOG, a registry, a TODO), land a refactor that takes those lines away first. one changelog-fragments PR once cut about 20 push rounds down to one per PR.
 6. rerun the plan on every new approval and before every push you allow.
 
-send each owner its position, what it conflicts with, and when to push. a staged push waits until every queued PR it conflicts with has landed, because pushes dismiss approvals and re-run CI.
+send each owner its position, what it conflicts with, and when to push. a staged push waits until every queued PR it conflicts with has landed, because a push re-runs CI and, under either approval rule, needs a fresh approval.
 
 ## after each landing
 
