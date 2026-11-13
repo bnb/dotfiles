@@ -5,15 +5,12 @@ description: How I want review comments, review bots, CI failures, and chained o
 
 # PR feedback
 
-CI and review bots cost money on every push, so the point of all of this is fewer, better pushes.
-
 ## review comments
 
 - "address feedback" means every review comment on the PRs, human and bot. lean toward the suggested change, and tell me what you declined and why.
 - triage each bot comment as blocking or not before touching code.
-- confirm a fix by replying with a GitHub suggestion block before pushing. replies come back to me as paste-ready markdown unless I asked you to post them.
+- confirm a fix by replying with a GitHub suggestion block before pushing.
 - batch every real fix into one push.
-- CodeQL and code scanning alerts always block, and get fixed in the code. never dismiss one, suppress it, or narrow the CodeQL config to clear it, even when it looks like a false positive (the instructions' PRs section has the full rule). a suspected false positive comes to me with its alert link and evidence, and stays open.
 
 ## push rounds
 
@@ -24,7 +21,7 @@ after two push rounds on a PR, hand it back to me. the exception is "make the bo
 a PR that builds on another one targets the branch below it, and gets its base merged in, never rebased. a merge leaves the PR's head alone, so its green checks still count once the PR below merges and it's retargeted to main. merge bottom-up, with merge commits.
 
 - fix a bug on the lowest branch that has it, then merge that branch up through each one above.
-- only the next PR to merge and the one after it run CI. merge fixes up the chain locally, and push an upper branch only once it enters that window. open PRs outside it as drafts when the repo's CI skips drafts, and cancel runs on PRs outside it.
+- where runners are limited (as in cutenode/localnetwork), only the next PR to merge and the one after it run CI. merge fixes up the chain locally, and push an upper branch only once it enters that window. open PRs outside it as drafts when the repo's CI skips drafts, and cancel runs on PRs outside it.
 - where main requires a CodeQL default-setup scan, push a chained branch only once it targets main. default setup scans only PRs into the default branch, so a PR whose checks ran against another base stays blocked after the retarget until something pushes to it.
 - "fix conflicts" or "make it mergeable" means merging each base in, bottom-up, with local checks on each branch. it's done when GitHub shows every PR in the chain as mergeable.
 

@@ -250,7 +250,7 @@ EOF
 # One node version manager: asdf, the one PERSONAL_SETUP_ASDF below loads.
 # git-lfs because the committed .gitconfig sets the lfs filter as required, and
 # a required filter with no binary behind it fails every checkout of an LFS repo.
-# ripgrep and fd because configs/ai/instructions.md tells agents to use them.
+# ripgrep and fd for searching, since they skip .gitignored paths like node_modules.
 MACOS_FORMULAE="git git-lfs gh opencode asdf pnpm starship python3 bash shellcheck rust ripgrep fd alyraffauf/tap/tg"
 
 # Verified against the Homebrew API. Three of these used to be wrong:

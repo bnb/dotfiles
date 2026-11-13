@@ -1,6 +1,6 @@
 ---
 name: ui
-description: My rules for building and checking user interfaces (web apps, Electron, native, browser extensions): matching the app's design language, widths to check, no flashes or layout shift, never blocking on data, loading, empty and error states with Storybook stories, session handling, and the accessibility and Lighthouse checks that count as done. Use whenever you build, change, fix, or review screens, components, styles, or layout, including a small visual bug, design variants, and app harnesses that click through every screen. Not for backend endpoints, CLI commands, or writing PRs and docs.
+description: My rules for building and checking user interfaces (web apps, Electron, native, browser extensions): matching the app's design language, widths to check, no flashes or layout shift, never blocking on data, loading, empty and error states with Storybook stories, session handling, persisted state and additive imports, and the accessibility and Lighthouse checks that count as done. Use whenever you build, change, fix, or review screens, components, styles, or layout, including a small visual bug, design variants, and app harnesses that click through every screen. Not for backend endpoints, CLI commands, or writing PRs and docs.
 ---
 
 # UI and design
@@ -12,6 +12,8 @@ description: My rules for building and checking user interfaces (web apps, Elect
 - design every state (loading, empty, error), each with a Storybook story, mobile too. errors look like an expected part of the app and offer the next step.
 - returning users: catch an expired session on load, not on the first click. when navigating between items, never show the previous one's data.
 - when a background check fails, fall back to a sane state (signed out, partial data), not a blocking notice. users never see internal state or diagnostics, and copy never mentions implementation details.
+- features are additive by default: imports and merges add to existing data (deduplicated). replacing or deleting is opt-in.
+- user state and settings persist across reloads, navigation, and reopening, never silently resetting. new state joins persistence and export/import in the same change.
 - design options means several genuinely different variants I can open and compare.
 - accessibility and Lighthouse checks are part of done. the chrome-devtools `a11y-debugging` skill and its `lighthouse_audit` tool cover both.
 

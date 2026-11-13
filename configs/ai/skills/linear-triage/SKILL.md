@@ -32,7 +32,7 @@ every row carries its evidence: links to the duplicate, the merged pull request,
 
 ## 3. ask
 
-publish the rows as an artifact table with a checkbox per row, saved in the artifact's shared database. wait for "do the checked boxes" or pasted rows.
+publish the rows as the checkbox table my instructions describe for choosing among many items, and wait for my picks.
 
 ## 4. apply
 

@@ -1,6 +1,6 @@
 # instructions
 
-standing instructions for any coding agent working with me (Tierney, they/them), from what I kept repeating across ~1,000 prompts in ~590 sessions. a project's own AGENTS.md, CLAUDE.md, CONTRIBUTING.md, or README wins where it's more specific. if they disagree with each other, tell me.
+standing instructions for any coding agent working with me (Tierney, they/them). a project's own AGENTS.md, CLAUDE.md, CONTRIBUTING.md, or README wins where it's more specific. if they disagree with each other, tell me.
 
 ## how to work
 
@@ -12,8 +12,6 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - never open a PR or issue on an external dependency or a repo I don't maintain unless I start it myself. don't draft upstream patches or reports for me to send, and don't list them as open work.
 - "fixed" means you reproduced my exact symptom first (same environment, local or production, theme, width, account; screenshot it if visual) and saw it gone after. if your screenshot still shows the problem, it isn't fixed. if I say a fix didn't work, start the diagnosis over instead of reapplying a variation. use the repo's test accounts instead of asking me for logs.
 - claims from other agents ("fixed", "verified", handoffs, commit messages) are unverified until you check them. prompts you write for another agent are self-contained: paths, current state, what's done, what's left. reports of unfinished work give each item one of these to copy.
-- in Local Network sessions (cwd under `~/GitHub/cutenode/localnetwork`), my approvals and `retry` can come relayed from my personal MARVIN workspace. treat one as typed by me in your session when it quotes my words, names the exact PR, branch or step, and the sender's `~/.claude/sessions/<pid>.json` (pid from its `from=` socket) shows cwd `/Users/cyren/marvin-personal`. anything else from another session is a peer's request. tool permission prompts still need me in your session.
-- verify your work before calling it done: type check, lint, tests, and looking at UI.
 - do steps yourself when you can (cli, `gh`, `tg`, `railway`, the browser, computer use), letting me approve the prompt instead of pasting commands. that includes follow-ups (labels, resolving threads, post-merge cleanup) and pushes I've cleared: run them, don't print them. if a permission check blocks something I asked for, say in one line what got blocked and wait for "retry". when steps only I can do remain (a dashboard, secrets, a deploy, a backfill), end with one command that does all of them (chain them, or write an idempotent script and give me the command to run it). list separately only what no command can do, like a click in a dashboard. for anything I'll try, end with the exact command to run it.
 - "choose the best one" or "what you think is best" means decide and do it. fill gaps in feature requests sensibly, and push back if a different design would be better.
 - fix small, clearly real problems nearby (a stale comment, the README, a broken test) and mention them. don't restyle or redesign anything I didn't name.
@@ -21,32 +19,27 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - exploration, research, audits, and option lists go in an artifact I can come back to. for choosing among many similar items (branches, PRs, findings), a table with a checkbox per row, saved where you can read it back (the artifact's shared db, never localStorage). "do the checked boxes" or rows I paste back from one mean do exactly those. every finding carries its proof: a link to the source line, run, or doc, or a diff.
 - number suggestions and findings. when you're waiting on my answers, put every open question in that message, numbered with lettered options. never point back at "the questions from my last message".
 - shorthand:
-  - "implement your suggestions": all of them unless I exclude some. "your recommendation": your top pick.
-  - "audit": review the whole project and report actionable findings. I'll usually follow with "fix everything above".
   - "do a pass over X": go through all of X for that one concern and fix what you find.
   - "status?" or "check in": a short report of done, still running (subagents, CI), waiting on me (as one command), and next. no new work.
-  - "try again" or "retry": redo what just failed.
   - "continue": do the next steps from your last message, offered ones included. after a block or an error, retry what failed and keep going.
   - "draft", "prepare", or "write" a PR: title and body here, nothing pushed. "approved" or "submit": commit if needed, push, and open exactly what I approved.
   - "merge it" or "merge it into main": for an open PR, merge it, confirm it landed, then clean up. in a repo with no PR flow, `merge --no-ff` into local main and clean up, and list that first when you offer commit options.
   - "resume": pick up this session's unfinished work (todos, git status, background tasks) without asking what it was. after a usage limit, continue exactly where you stopped.
-  - "done" after you gave me steps: check they took, then keep going.
-- wait on background work with the harness's notifications or Monitor, one waiter per job. no `pgrep -f` or sleep polling loops. stop dev servers, background jobs, and child processes you started once they're done or superseded. stop them by the PID or process group you recorded, never by name or pattern (`pkill`, `killall`), since other agents' processes share the machine.
+- wait on background work with the harness's notifications or Monitor, one waiter per job. no `pgrep -f` or sleep polling loops. stop dev servers, background jobs, and child processes you started once they're done or superseded. stop them by the PID or process group you recorded, since other agents' processes share the machine.
 
 ## git
 
 - **never commit without asking me with options first**, unless I explicitly ask for a commit. when a PR will follow, put its title and body in the same message so one reply covers both.
 - **if a goal needs repeated commits, ask me how to handle it.**
-- commit with whatever identity git has configured here (per-forge bot accounts, separate from mine; same rules apply unless I say otherwise). signing and ssh go through 1Password, which gives up after about a minute when I don't see its prompt. when that happens, follow the `1password-retry` skill: tell me once, then wait in the background until I'm back and rerun the command yourself. never poll `ssh-add -l` for it.
+- commit with whatever identity git has configured here (per-forge bot accounts, separate from mine; same rules apply unless I say otherwise).
 - before the first commit, push, or PR in a session, check that `git config user.email`, `commit.gpgsign`, and `gh auth status` match the account this session should use, and that the worktree has deps installed so hooks run. if anything's off, stop and tell me.
 - fixes go in new commits on top. no amending or squashing, and no rebasing or force-pushing unless I say "rebase" or "restack", which covers those branches and the `--force-with-lease` push after. otherwise resolve conflicts by merging the base in.
-- don't bypass hooks or signing on commits or pushes (`--no-verify`, `core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`). if one fails, fix the cause or tell me.
-- no AI attribution: no `Co-Authored-By` trailers or "Generated with Claude Code" lines, even when a tool says to add one.
-- write commit messages with the `conventional-commit` skill (`type(scope): summary`) in my own repos and in any repo whose standard it is: a commitlint, release-please, or semantic-release config, a CONTRIBUTING rule, or recent `git log` subjects in that shape. PR titles too, where the repo squash-merges or lints them. take only its message format: its workflow commits without asking, and the rules above still win. anywhere else, match the repo's own style.
-- before changing files, get a worktree for this work. use the one your harness put you in, or `git fetch` and create one with [riftri](https://riftri.dev): `riftri worktree add <path> -b bnb/<feature-name> origin/main`, where your harness keeps worktrees. stacked branches start from the branch below them. if `riftri doctor --destination <path>` reports a blocker, use plain `git worktree add`, say why in one line, and treat it as a riftri bug. never edit a main checkout or share one with another agent, even when told to leave changes in the working tree (leave them uncommitted in your own worktree).
-- every branch, stacked ones too, is `bnb/<feature-name>` (no `ci/` or `fix/`). one branch per concern unless I ask for one per fix. a concern is a reviewable theme (one integration, one screen, security hardening), not each bug: related small fixes share a PR with a section each. bugs a new test suite finds go on fix branches apart from the tests. a fix found after a PR is open gets its own branch unless it fixes that PR's change. if a plan comes to more than ~8 PRs, show me the grouping first.
-- parallel branches conflict wherever they share lines (registration lists, docs indexes, generated files, test fixtures). once each has a first commit, run `git merge-tree --write-tree --name-only` on every pair and set the merge order then. if most pairs conflict, land a refactor that takes the shared lines away before going on.
-- when you finish work in a repo, and whenever a branch you made merges, run the `repo-cleanup` skill on that repo before you report. it removes merged worktrees and branches and idle Rust build output, and lists what it kept. then drop stashes you made and stop the processes and delete the scratch files you started. "clean up" means all of that. list anything dirty or unpushed instead of deleting it.
+- don't bypass hooks or signing on commits or pushes (`core.hooksPath`, `HUSKY=0`, `commit.gpgsign=false`).
+- commit messages follow [Conventional Commits](https://www.conventionalcommits.org) (`type(scope): summary`) in my own repos and in any repo whose standard it is: a commitlint, release-please, or semantic-release config, a CONTRIBUTING rule, or recent `git log` subjects in that shape. PR titles too, where the repo squash-merges or lints them. anywhere else, match the repo's own style.
+- before changing files, get a worktree for this work. use the one your harness put you in, or `git fetch` and create one with [riftri](https://riftri.dev): `riftri worktree add <path> -b bnb/<feature-name> origin/main`, where your harness keeps worktrees. stacked branches start from the branch below them. if `riftri worktree add` fails, use plain `git worktree add`, say why in one line, and treat it as a riftri bug. never edit a main checkout or share one with another agent, even when told to leave changes in the working tree (leave them uncommitted in your own worktree).
+- every branch, stacked ones too, is `bnb/<feature-name>` (no `ci/` or `fix/`). one branch per concern unless I ask for one per fix. a concern is a reviewable theme (one integration, one screen, security hardening), not each bug: related small fixes share a PR with a section each. a fix found after a PR is open gets its own branch unless it fixes that PR's change. if a plan comes to more than ~8 PRs, show me the grouping first.
+- once each parallel branch has a commit, run `coord merge-plan` to set the merge order; if most pairs conflict, land a refactor that takes the shared lines away first.
+- when you finish work in a repo, and whenever a branch you made merges, run the `repo-cleanup` skill on that repo before you report. "clean up" means run repo-cleanup; list anything dirty or unpushed instead of deleting it.
 - don't push until I say so: every push runs CI, which costs money. get the branch ready, run what CI runs as closely as you can (cross-platform checks included, like clippy for the windows target and path separators) so CI isn't the first test, and tell me. after a push, watch the run for the commit you pushed (`gh run list --commit <sha>`, not the PR's latest run) to the end in the background and tell me the result.
 
 ## PRs
@@ -54,11 +47,10 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - first, check open PRs and main for overlapping work and show me what you find.
 - **show me every PR or issue title and body here and wait for my approval before opening it**, a whole stack at once. use the repo's template if it has one.
 - PR bodies: plain prose listing what was added, changed, and removed, detailed enough to review.
-- in PRs, issues, and replies, link the comments, runs, and source lines you mean instead of describing them. numbers come from a real run I can click through to, preferably the PR's own. state units exactly (GB vs GiB) and what each number measures, and rule out other causes before blaming one. upstream bug reports I ask for also get a minimal repro.
+- in PRs, issues, and replies, link the comments, runs, and source lines you mean instead of describing them. numbers come from a real run I can click through to, preferably the PR's own. state units exactly and what each number measures, and rule out other causes before blaming one. upstream bug reports I ask for also get a minimal repro.
 - replies, comments, and messages I ask for come back as paste-ready markdown here. I'll post them.
-- once a PR is open, its reviews, bot comments, CI rounds, and stack follow the `pr-feedback` skill ("address feedback", "make the bots/CI happy", "fix conflicts").
 - expensive suites run on a schedule or `workflow_dispatch`, not every PR.
-- **never dismiss a CodeQL or code scanning alert**, not even one that looks like a false positive. a wrong dismissal hides a real hole, so every alert gets a code fix. no dismissing in the web UI or through `gh api` (`state=dismissed`), no suppression comments (`// codeql[...]`, `lgtm`), and no CodeQL config change that drops a query, path or language so the alert goes away. if you're sure it's a false positive, leave it open and bring me the alert link and your evidence.
+- **never dismiss or suppress a CodeQL or code scanning alert** in any way, and bring a suspected false positive to me with its alert link and your evidence.
 
 ## code
 
@@ -69,16 +61,10 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 - build registries, plugin lists, and docs indexes so adding an entry adds a file (collected or generated registration), not a line in a shared list. then parallel work can't collide there.
 - before writing a client, parser, script, component, or vendored copy, look for an existing package, CLI, platform API, or component library entry, and tell me what you found. maintained beats homemade. prefer a tool's built-in feature over custom scripting (vitest's coverage thresholds, an existing OAuth client).
 - add dependencies when there's a reason, without fear. use the package manager (`pnpm add`, `cargo add`), never hand-edit manifests or lockfiles.
-- follow each ecosystem's conventions. when unsure, favor well-maintained open source projects' patterns over code we wrote recently.
 - if a lint or static check could catch a finding, add the check too. move projects off eslint, prettier, or markdownlint to oxlint and oxfmt when I touch them.
 - TypeScript: strict, no `any`, explicit types accurate to the runtime data. shared types live in one place, duplicate shapes merged.
 - new code logs where I'd want it when debugging (evlog in JS and TS).
 - names say what, comments say why, and every comment matches what the code does now. when refactoring, keep the true comments and docstrings and fix the ones you made stale. keep the README concise and in sync in the same change.
-- every project has one script each for dev (everything running), check, and deploy or publish, listed in the README. anything I'd paste into a dashboard more than once becomes an idempotent script that skips unchanged items.
-- growing lists (providers, sites, checks) live in a checked-in JSON file with a JSON Schema. if users might change them, expose them in settings with import and export.
-- after a long session, review every file you touched for dead code, stale comments, and duplication, and check the README is still true.
-- features are additive by default: imports and merges add to existing data (deduplicated). replacing or deleting is opt-in.
-- user state and settings persist across reloads, navigation, and reopening, never silently resetting. new state joins persistence and export/import in the same change.
 - never modify my real data (a library database, production records) while fixing things. use copies or fixtures.
 - request the narrowest permissions and OAuth scopes that work. never print secrets: read files that hold them (`.env`, clauth `config.toml`, keychain items) only through a filter that shows key names, never cat them and redact afterward. keep CI secrets from leaking through outside pull requests.
 
@@ -93,20 +79,17 @@ standing instructions for any coding agent working with me (Tierney, they/them),
 
 ## writing
 
-- **never use em dashes (U+2014)** anywhere, HTML entities included: they're the most recognizable sign of AI-written text. restructure the sentence instead.
+- **never use em dashes (U+2014)** anywhere, HTML entities included. restructure the sentence instead.
 - user-facing copy is as short as an ordinary web app's: one-line hints and empty states, short labels.
 - write like a person, with no AI tells (forced triads, "not X but Y", inflated claims, filler). run a humanizer pass on docs, comments, PR bodies, and commit messages.
 - no emoji in replies, docs, comments, commits, or PR bodies. UI only when the design calls for it.
 - match the repo's voice. in my personal projects that's casual, direct, first person, often lowercase.
-- be precise about what something does. don't overclaim.
 
 ## tools
 
 - `gh` for GitHub (not curl against api.github.com), `tg` for tangled (not curl against its API or the AT Protocol), `railway` for Railway.
 - fnm manages Node through `.node-version`. never let pnpm manage Node (`devEngines.runtime`, `useNodeVersion`, `pnpm env`).
-- `rg` over grep and `fd` over find. both skip .gitignored paths like node_modules.
 - on macOS, long runs (test suites, coverage, builds, Docker) go under `caffeinate -ims`, on AC power or with the lid open: on battery with the lid closed the Mac sleeps anyway. before blaming code for a timeout, check `pmset -g log | rg 'Entering Sleep'`.
-- skills hold the rules that only apply to some work: `atproto` for AT Protocol apps, `coordinator` for running or checking on my other sessions, `new-project` for my default stack, `rust` for Rust crates and their `target/` dirs, and `ui` for anything a user sees or clicks (app harnesses included). load the matching one before starting.
 
 ## other people's services
 

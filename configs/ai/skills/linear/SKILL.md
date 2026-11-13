@@ -26,7 +26,7 @@ a LOC issue is synced when its attachments include a `github.com/cutenode/localn
 
 ## status moves itself
 
-don't set In Progress, In Review or Done by hand. a pull request that says `Fixes LOC-123` (or `Part of LOC-123`), or a branch named `bnb/loc-123-…`, moves its issue to In Progress when it opens, In Review when a review is requested, and Done when it merges.
+don't set In Progress, In Review or Done by hand: the linked pull request or `bnb/loc-<n>-…` branch moves the issue.
 
 ## what you write without asking
 
@@ -55,8 +55,8 @@ work comes from the "Bot ready" team view: the `bot-ready` label in Backlog or T
 
 ## labels
 
-Linear's labels mirror [labels.yml](https://github.com/cutenode/localnetwork/blob/main/.github/labels.yml). Linear only gets a label when a synced issue first uses it, so if one you need is missing, create it in the LOC team (`save_issue_label` with `teamId`) with the same name, colour and description.
+if a label you need is missing in LOC, create it (`save_issue_label` with `teamId`) with the same name, colour and description as [labels.yml](https://github.com/cutenode/localnetwork/blob/main/.github/labels.yml).
 
 ## writing
 
-plain, short sentences. cite code as `path:line` with a GitHub link. no em dashes and no emoji.
+cite code as `path:line` with a GitHub link.
