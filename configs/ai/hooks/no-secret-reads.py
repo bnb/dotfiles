@@ -6,8 +6,6 @@ import json
 import re
 import sys
 
-from shell_words import commands
-
 KEYCHAIN = re.compile(r"\bsecurity\s+find-(?:generic|internet)-password\b[^|;&\n]*\s-[A-Za-z]*[wg][A-Za-z]*\b")
 DUMPERS = {"cat", "bat", "less", "more", "head", "tail", "nl", "strings", "xxd", "hexdump", "od", "tac"}
 SECRET_FILE = re.compile(
@@ -21,10 +19,17 @@ def dumps_secret(words):
 
 
 def main():
-    event = json.load(sys.stdin)
-    command = (event.get("tool_input") or {}).get("command") or ""
-    if not KEYCHAIN.search(command) and not any(dumps_secret(words) for words in commands(command)):
-        return 0
+    try:
+        # imported in here so a missing shell_words.py fails closed too
+        from shell_words import commands
+
+        command = (json.load(sys.stdin).get("tool_input") or {}).get("command") or ""
+        if not KEYCHAIN.search(command) and not any(dumps_secret(words) for words in commands(command)):
+            return 0
+    except Exception as error:
+        # fail closed: a command this can't read could be one it should refuse
+        print("no-secret-reads couldn't check this command: %r" % error, file=sys.stderr)
+        return 2
     print(
         "this would print secret values into the transcript. read key names only, "
         "for example: rg -o '^\\s*[A-Za-z_][A-Za-z0-9_]*\\s*=' <file>. if you need "

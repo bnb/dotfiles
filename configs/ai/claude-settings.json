@@ -23,18 +23,18 @@
       "Bash(cargo llvm-cov *)",
       "Bash(cargo nextest *)",
       "Bash(gh run rerun *)",
-      "Bash(gh workflow run *)"
+      "Bash(gh workflow run *)",
+      "Edit(~/.claude/jobs/**)"
     ],
     "ask": [
       "Bash(git push *)"
     ],
     "deny": [
       "Bash(git commit *--no-verify*)",
-      "Bash(git worktree remove *--force*)",
-      "Bash(git worktree remove* -f*)",
       "Bash(git branch -d *--force*)",
       "Bash(git branch -d* -f*)",
       "Bash(git branch -d* -D*)",
+      "Bash(git branch -D*)",
       "Bash(gh pr merge *--admin*)",
       "Bash(pkill *)",
       "Bash(killall *)"
@@ -130,7 +130,27 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/no-wrong-account.py\"",
+            "timeout": 30
+          }
+        ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "clauth@clauth": true,
+    "cloudflare@claude-plugins-official": true,
+    "linear@anthropic-plugin-directory": true,
+    "playwright@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
   }
 }

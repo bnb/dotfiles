@@ -1082,39 +1082,43 @@ install_skill_tools() {
   return 0
 }
 
-# Settings that enforce rules instructions.md can only ask for: no attribution
-# lines, none of Claude Code's own git instructions, pushes asking first,
-# cleanup, commit, and merge steps that don't, my auto mode environment, and
-# hooks refusing em dashes, secret reads, forced cleanup or hook-skipping
-# commits, and pkill or killall (configs/ai/claude-settings.json and
-# configs/ai/hooks, and configs/ai/codex-git.rules for Codex). Added to
-# ~/.claude/settings.json: lists gain the missing entries, the auto mode
-# environment is replaced whole, and any other key already set to something
-# else is left alone. Entries in RETIRED were mine once and get taken out. clauth
-# copies these keys into work sessions too.
-enforce_ai_rules() {
-  log_step "adding my guardrails to Claude Code's settings"
-  for hook in "$DOTFILES_DIR"/configs/ai/hooks/*.py
-  do
-    link_dotfile "configs/ai/hooks/${hook##*/}" "$HOME/.claude/hooks/${hook##*/}" || true
-  done
+# usage: merge_agent_settings ~/.claude/settings.json configs/ai/claude-settings.json [--absolute-home]
+#
+# Adds a settings file from the repo to an agent's own: lists gain the missing
+# entries, the auto mode environment is replaced whole, and any other key
+# already set to something else is left alone. Entries in RETIRED were mine
+# once and get taken out. A file that's still a link to the repo copy becomes
+# a file of its own first, so what the agent's apps write there stays out of
+# the repo. --absolute-home writes $HOME as the real path.
+merge_agent_settings() {
   PYTHONPATH="$DOTFILES_DIR/setup/lib${PYTHONPATH:+:$PYTHONPATH}" PYTHONDONTWRITEBYTECODE=1 \
-    python3 - "$HOME/.claude/settings.json" "$DOTFILES_DIR/configs/ai/claude-settings.json" <<'PY' || record_failure "couldn't update ~/.claude/settings.json"
+    python3 - "$1" "$DOTFILES_DIR/$2" "${@:3}" <<'PY' || record_failure "couldn't update $1"
 import json
 import os
 import sys
 from config_file import read_json, write_json
 
-path, ours = sys.argv[1:]
+path, ours, *flags = sys.argv[1:]
 settings = read_json(path)
+os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+if os.path.islink(path) and os.path.realpath(path) == os.path.realpath(ours):
+    os.unlink(path)
+    write_json(path, settings)
+    print("unlinked from %s" % ours)
 
 # the guardrails that kept agents out of worktrees, before they used riftri,
 # a repo-cleanup rule whose leading wildcard matched any python3 command, a
-# cargo clean rule that also allowed --target-dir anywhere, and a graphql rule
-# that allowed any query mentioning resolveReviewThread
+# cargo clean rule that also allowed --target-dir anywhere, a graphql rule
+# that allowed any query mentioning resolveReviewThread, and the forced
+# worktree removal rules, which also refused the scratch worktrees
+# no-forced-git.py lets through
 RETIRED = {
     "ask": ["Bash(git worktree add *)"],
-    "deny": ["Agent(isolation:worktree)"],
+    "deny": [
+        "Agent(isolation:worktree)",
+        "Bash(git worktree remove *--force*)",
+        "Bash(git worktree remove* -f*)",
+    ],
     "allow": [
         "Bash(python3 *skills/repo-cleanup/scripts/cleanup.py*)",
         "Bash(cargo clean*)",
@@ -1160,8 +1164,10 @@ def merge(current, wanted):
     return changed
 
 
-# rules name scripts by absolute path, so a wildcard can't stand in for it
-wanted = json.loads(json.dumps(read_json(ours)).replace("$HOME", os.path.expanduser("~")))
+wanted = read_json(ours)
+if "--absolute-home" in flags:
+    # rules name scripts by absolute path, so a wildcard can't stand in for it
+    wanted = json.loads(json.dumps(wanted).replace("$HOME", os.path.expanduser("~")))
 retired = isinstance(settings.get("permissions"), dict) and retire(settings["permissions"])
 if merge(settings, wanted) or retired:
     write_json(path, settings)
@@ -1169,6 +1175,24 @@ if merge(settings, wanted) or retired:
 else:
     print("already set")
 PY
+}
+
+# Settings that enforce what instructions.md leaves to settings and hooks: no
+# attribution lines, none of Claude Code's own git instructions, pushes asking
+# first, cleanup, commit, and merge steps that don't, my auto mode
+# environment, my plugins, and hooks refusing em dashes, secret reads, forced
+# cleanup or hook-skipping commits, pkill or killall, dismissing code scanning
+# alerts, and committing or writing to GitHub as the wrong account
+# (configs/ai/claude-settings.json and configs/ai/hooks, and
+# configs/ai/codex-git.rules for Codex). clauth copies these keys into work
+# sessions too.
+enforce_ai_rules() {
+  log_step "adding my guardrails to Claude Code's settings"
+  for hook in "$DOTFILES_DIR"/configs/ai/hooks/*.py
+  do
+    link_dotfile "configs/ai/hooks/${hook##*/}" "$HOME/.claude/hooks/${hook##*/}" || true
+  done
+  merge_agent_settings "$HOME/.claude/settings.json" configs/ai/claude-settings.json --absolute-home
   link_dotfile configs/ai/codex-git.rules "${CODEX_HOME:-$HOME/.codex}/rules/git.rules" || true
   return 0
 }
@@ -1189,7 +1213,9 @@ link_work_files() {
   link_dotfile configs/ai/assistant-ui.md "$WORK_DIR/CLAUDE.md" || true
   link_dotfile configs/ai/assistant-ui.md "$WORK_DIR/AGENTS.md" || true
   claude_reads_agents_md || true
-  link_dotfile configs/ai/codex-hooks.json "${CODEX_HOME:-$HOME/.codex}/hooks.json" || true
+  # merged rather than linked: Gode adds and rewrites its own hooks in there
+  log_step "adding the assistant-ui AGENTS.md hook to Codex's hooks.json"
+  merge_agent_settings "${CODEX_HOME:-$HOME/.codex}/hooks.json" configs/ai/codex-hooks.json || true
   vscode_claude_on_work_account || true
   return 0
 }
