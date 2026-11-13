@@ -33,7 +33,7 @@ anything it's about to replace gets copied to `<file>.backup.<timestamp>` first.
 
 `bash` and `shellcheck` are there for editing this repo: macOS ships bash 3.2 from 2007, and `setup.sh` has to keep working under it because that's the only bash a fresh machine has. having a modern bash and a linter around makes checking that a lot easier.
 
-`ripgrep` and `fd` because my [agent instructions](./configs/ai/instructions.md) tell agents to use them.
+`ripgrep` and `fd` for searching, since they skip .gitignored paths like `node_modules`.
 
 `tg` is the Tangled CLI, the `gh` of Tangled, which the AI agents use to act as @bot.bnb.im ([configs/ai](./configs/ai/README.md)). it's in a third-party tap, which `setup.sh` taps and then trusts, since Homebrew 7 won't load a formula from an unofficial tap until you do.
 

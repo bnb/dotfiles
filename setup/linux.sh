@@ -52,7 +52,7 @@ install_apt_packages() {
 }
 
 # One node version manager: fnm, the one PERSONAL_SETUP_FNM below loads.
-# ripgrep and fd because configs/ai/instructions.md tells agents to use them.
+# ripgrep and fd for searching, since they skip .gitignored paths like node_modules.
 LINUX_FORMULAE="gh opencode fnm pnpm starship shellcheck rust ripgrep fd alyraffauf/tap/tg"
 
 # linuxbrew's zsh completions ship group-writable, which zsh's compaudit

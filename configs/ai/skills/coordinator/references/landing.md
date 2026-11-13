@@ -36,13 +36,13 @@ send each owner its position, what it conflicts with, and when to push. a staged
 
 ## CI capacity
 
-- only the next PR to merge and the one after it need CI (pr-feedback's window). cancel runs on PRs whose head will change, from a protect list and a throwaway list the owners agreed to.
+- where runners are limited (as in cutenode/localnetwork), only the next PR to merge and the one after it need CI (pr-feedback's window). cancel runs on PRs whose head will change, from a protect list and a throwaway list the owners agreed to.
 - release workflows and merge queue runs are report-only. never cancel them.
 - give the CI slot to a PR that needs no push while another waits on 1Password.
 
 ## if I'm away
 
-owners prepare against the final main and queue their pushes for one 1Password burst. see [away.md](away.md). when I'm back, tell every owner at once.
+owners prepare against the final main and queue their pushes for one 1Password burst (one sitting where I approve every held action). see [away.md](away.md). when I'm back, tell every owner at once.
 
 ## reporting
 

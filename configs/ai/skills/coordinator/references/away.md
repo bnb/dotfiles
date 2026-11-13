@@ -12,14 +12,14 @@ one message per session, with its own pending questions answered where you can:
 
 - take the recommended option on your open questions for now, and keep it easy to undo. tell me which ones you took.
 - hold commits, pushes, opening PRs, writes to external services, and deletions until Tierney is back and approves them in your own session. (skip whatever their own user explicitly allowed them.)
-- stage held work so one approval replays it: commits as an idempotent script with a `--check` mode, kept somewhere durable (the repo's `.claude/` or the ledger's folder), not in a job tmp dir.
+- stage held work as the 1password-retry skill's "while I'm away" section says, with a `--check` mode on the replay script, kept somewhere durable (the repo's `.claude/` or the ledger's folder), not in a job tmp dir.
 - if a prompt blocks you, note it and move on to the next thing.
 - end with a morning report: done, held (each one reply away), and questions (numbered, lettered, recommended first).
 
 ## while I'm gone
 
 - spot-check staged work before it goes on my list: read the diff, `bash -n` the replay script, run its `--check`, run one test. numbers you didn't reproduce are the session's.
-- nothing gets signed or pushed. signing goes through 1Password, which fails after about a minute when nobody sees its prompt. the 1password-retry skill holds the burst for when I'm back.
+- nothing gets signed or pushed (the 1password-retry skill).
 - main keeps moving. every 30 minutes or so, `git merge-tree` each staged head against `origin/main` and tell the owner only about real conflicts.
 - a stalled session gets resumed with one message naming its last step and its disk state, not replaced by a new one. after API or auth outages, check every worker, since they tend to stop together.
 - keep the machine usable: disk, memory, and load (see SKILL.md). size waves of work by what's free.
