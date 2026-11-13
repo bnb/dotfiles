@@ -105,10 +105,6 @@ alias config:tracehub='bash "$PERSONAL_DOTFILES_PATH/configs/ai/tracehub.sh"'
 # commands there use it whichever profile is the default
 alias config:infisical='infisical login --save-as assistant-ui && infisical profile bind assistant-ui "${PERSONAL_GITHUB_DIR:-$HOME/GitHub}/assistant-ui"'
 alias node:remotes="__personal_node_remotes"
-# single-quoted on purpose: $(brew --prefix) runs when redis:start is invoked,
-# not when this file is sourced, so it costs nothing at shell startup
-alias redis:start='redis-server "$(brew --prefix)/etc/redis.conf"'
-alias redis:stop="redis-cli SHUTDOWN"
 
 # VS Code Insiders is what the setup script installs, so it wins; plain `code`
 # and then $EDITOR are the fallbacks, because an unguarded alias here turns
