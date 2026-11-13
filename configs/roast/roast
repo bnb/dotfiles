@@ -26,4 +26,5 @@ then
   exit 127
 fi
 
-exec op run --env-file="$here/tokenparty.env" -- "$real" "$@"
+# More than one 1Password account can be signed in; the key is in my own.
+exec op run --account my.1password.com --env-file="$here/tokenparty.env" -- "$real" "$@"
