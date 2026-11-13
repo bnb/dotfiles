@@ -74,7 +74,7 @@ two things to know about it:
 
 [Roast](https://github.com/bluesky-social/roast) reviews a diff with two models from different families: a finder proposes bugs and a verifier rechecks each one against the code. it only ships as a cask, in `bluesky-social/tap`, which `setup.sh` taps and trusts like `tg`'s. the cask has linux builds too, so `SHARED_CASKS` in [setup/lib/common.sh](./setup/lib/common.sh) installs it on both platforms, and brew checks the release's SHA-256 either way.
 
-[configs/roast/config.yaml](./configs/roast/config.yaml) gets symlinked to where roast looks: `$XDG_CONFIG_HOME/roast/config.yaml` when that's set, otherwise `~/Library/Application Support/roast/config.yaml` on macOS and `~/.config/roast/config.yaml` on linux. both roles go through tokenparty with one key, GPT as the finder and Claude as the verifier. the key isn't in the file: roast reads it from `$TOKENPARTY_API_KEY` (step 9 below).
+[configs/roast/config.yaml](./configs/roast/config.yaml) gets symlinked to where roast looks: `$XDG_CONFIG_HOME/roast/config.yaml` when that's set, otherwise `~/Library/Application Support/roast/config.yaml` on macOS and `~/.config/roast/config.yaml` on linux. both roles go through tokenparty with one key, GPT as the finder and Claude as the verifier. the key isn't in the file: roast reads it from `$TOKENPARTY_API_KEY`, which the `roast` wrapper sets from 1Password for each run (step 9 below).
 
 `roast skill install --dir ~/.agents/skills --force` puts its skill where Codex reads it, and Claude Code gets a symlink to it, the same as Television's. `--force` because the skill changes with each release. `roast doctor` checks all of it. it runs a short tool loop against each model, so it isn't free.
 
@@ -98,7 +98,7 @@ Roughly in the order I do it:
 6. **`config:ai-tangled login`**: the same for Tangled, as @bot.bnb.im. the browser goes to the bot's PDS to sign in as it. `tg auth login bnb.im` logs me in too; the `tg` config pins my account, so the terminal stays me whichever logged in last.
 7. **`opencode auth login`**: authenticate opencode against a model provider; it's installed by brew but can't do anything until it has credentials, and those are per-machine and secret, so they never live in this repo.
 8. **`vercel login`**: sign the Vercel CLI in. the token lives in its own per-machine config, so it never goes in this repo.
-9. **`TOKENPARTY_API_KEY`**: make a tokenparty key for Roast and export it where roast runs, then `roast doctor`. it's per-machine and secret, so it never lives in this repo.
+9. **tokenparty key in 1Password**: make a tokenparty key for Roast and save it in 1Password as the item [configs/roast/tokenparty.env](./configs/roast/tokenparty.env) names, then `roast doctor`. don't export it in a shell profile: setup links [configs/roast/roast](./configs/roast/roast) into `~/.local/bin`, which reads it with `op run` for each run, so agents never see it in their environment.
 10. **`config:infisical`**, on a machine with `~/GitHub/assistant-ui`: signs the Infisical CLI in with my work account (pick Infisical Cloud (US) when it asks), saved as the `assistant-ui` login profile, and binds that directory to it. commands under it use that login even if another Infisical profile is the default.
 11. **switch this repo's remote to SSH** if I plan to push from the machine; `setup.sh` clones over HTTPS so it works before any of the above exists.
 12. **sign into everything**: Slack, Discord, Spotify, Zoom, Arc, Chrome Canary, VS Code Insiders (settings sync does the rest).

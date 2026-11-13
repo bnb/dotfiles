@@ -5,7 +5,8 @@
 # tokenparty, which serves Claude and GPT behind one key. Most of what I review
 # was written by Claude, so GPT finds and Claude checks.
 #
-# No key in here: Roast reads it from $TOKENPARTY_API_KEY when a role runs.
+# No key in here: Roast reads it from $TOKENPARTY_API_KEY when a role runs, and the roast
+# wrapper beside this sets that from 1Password for each run (tokenparty.env names the item).
 
 version: 1
 

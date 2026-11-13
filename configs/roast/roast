@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Runs Roast with its tokenparty key read from 1Password for this one run. The key is never
+# exported to the shell, where every process, agents included, would inherit it, and `op run`
+# masks it in Roast's output. tokenparty.env beside this holds the item's reference, not the key.
+# setup.sh links this into ~/.local/bin, ahead of the real roast on $PATH.
+set -euo pipefail
+
+here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+self="$(readlink -f "${BASH_SOURCE[0]}")"
+
+# The real roast: the first one on $PATH that isn't this script.
+real=""
+IFS=: read -r -a dirs <<<"$PATH"
+for dir in "${dirs[@]}"
+do
+  candidate="$dir/roast"
+  if [ -x "$candidate" ] && [ "$(readlink -f "$candidate")" != "$self" ]
+  then
+    real="$candidate"
+    break
+  fi
+done
+if [ -z "$real" ]
+then
+  echo "roast isn't installed (brew install bluesky-social/tap/roast)" >&2
+  exit 127
+fi
+
+exec op run --env-file="$here/tokenparty.env" -- "$real" "$@"

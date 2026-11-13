@@ -1270,6 +1270,8 @@ setup_roast() {
     config_home="$HOME/Library/Application Support"
   fi
   link_dotfile configs/roast/config.yaml "$config_home/roast/config.yaml" || true
+  # The wrapper reads the tokenparty key from 1Password per run, so nothing exports it.
+  link_dotfile configs/roast/roast "$HOME/.local/bin/roast" || true
 
   log_step "installing roast's agent skill"
   if ! command -v roast >/dev/null 2>&1
