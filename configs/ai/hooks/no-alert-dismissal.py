@@ -9,15 +9,6 @@ import sys
 FIELD_FLAGS = {"-f", "-F", "--field", "--raw-field"}
 
 
-def fields(args):
-    """the key=value pairs gh api sends, in -f k=v, -fk=v and --field=k=v forms"""
-    args = iter(args)
-    for arg in args:
-        flag, _, attached = arg.partition("=") if arg.startswith("--") else (arg[:2], "", arg[2:])
-        if flag in FIELD_FLAGS:
-            yield (attached or next(args, "")).lower()
-
-
 def dismisses(words):
     if words[:2] != ["gh", "api"]:
         return False
@@ -27,13 +18,17 @@ def dismisses(words):
     # a body from a file or stdin can't be read here, so it counts as a dismissal
     if any(arg == "--input" or arg.startswith("--input=") for arg in args):
         return True
-    return any(field.replace(" ", "").startswith("state=dismissed") for field in fields(args))
+    # the key=value pairs gh api sends
+    fields = values(args, FIELD_FLAGS)
+    return any(field.lower().replace(" ", "").startswith("state=dismissed") for field in fields)
 
 
 def main():
+    # global, so dismisses() can use it too
+    global values
     try:
         # imported in here so a missing shell_words.py fails closed too
-        from shell_words import commands
+        from shell_words import commands, values
 
         command = (json.load(sys.stdin).get("tool_input") or {}).get("command") or ""
         if not any(dismisses(words) for words in commands(command)):

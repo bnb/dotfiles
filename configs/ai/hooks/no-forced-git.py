@@ -3,11 +3,13 @@
 # git commit --no-verify or -n, and gh pr merge --admin. settings rules can't
 # deny these by pattern, since git takes abbreviated long options (--forc) and
 # bundled short ones (-df). the deny rules in claude-settings.json stay as a
-# second layer, for when this can't run.
+# second layer, for when this can't run. force-removing a worktree under
+# ~/.claude/jobs or /tmp is allowed: those are throwaway checkouts agents make
+# for one look, and they were two thirds of what this refused.
 import json
+import os
 import sys
 
-GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env", "--attr-source"}
 # per command: short options that take the next word as their value when
 # nothing's attached, and ones whose value can only be attached
 VALUE, ATTACHED_VALUE = 0, 1
@@ -17,6 +19,8 @@ SHORT_VALUES = {
     "commit": ("mFCct", "uS"),
     "merge": ("AbFt", ""),
 }
+# resolved, since /tmp is a link to /private/tmp on macOS
+SCRATCH_ROOTS = [os.path.realpath(os.path.expanduser(root)) for root in ("~/.claude/jobs", "/tmp", "/private/tmp")]
 
 
 def options(args, values):
@@ -42,14 +46,29 @@ def has(args, values, long, short):
     )
 
 
+def paths(args):
+    args = iter(args)
+    for arg in args:
+        if arg == "--":
+            yield from args
+        elif not arg.startswith("-"):
+            yield arg
+
+
+def scratch(path, directory):
+    # a relative path only counts when an absolute git -C says where it starts
+    path = os.path.join(directory, expand(path))
+    return os.path.isabs(path) and any(os.path.realpath(path).startswith(root + os.sep) for root in SCRATCH_ROOTS)
+
+
 def forced(words):
-    name, rest = words[0], words[1:]
-    if name == "git":
-        while rest and rest[0].startswith("-"):
-            rest = rest[2:] if rest[0] in GIT_VALUE_OPTIONS else rest[1:]
-    command = [name, *rest]
+    rest, directory = git_command(words) if words[0] == "git" else (words[1:], "")
+    command = [words[0], *rest]
     if command[:3] == ["git", "worktree", "remove"]:
-        return has(command[3:], "worktree", "--force", "f")
+        targets = list(paths(command[3:]))
+        return has(command[3:], "worktree", "--force", "f") and not (
+            targets and all(scratch(target, directory) for target in targets)
+        )
     if command[:2] == ["git", "branch"]:
         return has(command[2:], "branch", "--delete", "dD") and has(command[2:], "branch", "--force", "Df")
     if command[:2] == ["git", "commit"]:
@@ -60,9 +79,11 @@ def forced(words):
 
 
 def main():
+    # global, so forced() and scratch() can use them too
+    global expand, git_command
     try:
         # imported in here so a missing shell_words.py fails closed too
-        from shell_words import commands
+        from shell_words import commands, expand, git_command
 
         command = (json.load(sys.stdin).get("tool_input") or {}).get("command") or ""
         if not any(forced(words) for words in commands(command)):
@@ -75,7 +96,9 @@ def main():
         "this skips a safety check (force, --no-verify, or --admin). run it without "
         "that, or fix what it refuses on. to remove merged worktrees and branches, "
         "squash-merged ones included, run the repo-cleanup skill's cleanup.py, which "
-        "forces only what it has checked. if it still needs forcing, ask me to run it.",
+        "forces only what it has checked. a scratch worktree under ~/.claude/jobs or "
+        "/tmp can be force-removed by its absolute path. if anything else still needs "
+        "forcing, ask me to run it.",
         file=sys.stderr,
     )
     return 2
