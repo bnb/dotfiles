@@ -613,9 +613,11 @@ pnpm_global_install_batch() {
 # symlinks it into ~/.claude/skills. DO_NOT_TRACK turns off the CLI's telemetry
 # and its third-party security-audit lookups. `source@skill` installs just that
 # one skill from a repo that ships many.
-AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop assistant-ui/riftri github/awesome-copilot@conventional-commit"
+AGENT_SKILLS="blader/humanizer dmmulroy/anti-slop assistant-ui/riftri dubzzz/fast-check@javascript-testing-expert
+  mattpocock/skills@domain-modeling mattpocock/skills@grilling mattpocock/skills@grill-with-docs pbakaus/impeccable
+  blacktop/dotfiles@ratatui-tui evlog.dev@review-logging-patterns"
 
-# usage: agent_skills_install_batch blader/humanizer github/awesome-copilot@conventional-commit
+# usage: agent_skills_install_batch blader/humanizer dmmulroy/anti-slop
 #
 # Always returns 0, same as brew_install_batch. A source (or a source@skill's
 # skill) that's already installed is skipped; `pnpm dlx skills update -g` is
@@ -1011,7 +1013,7 @@ link_ai_instructions() {
   return 0
 }
 
-# usage: link_claude_skill television
+# usage: link_claude_skill roast
 #
 # Gives Claude Code the same relative symlink into ~/.agents/skills (which
 # Codex reads as is) that the Skills CLI makes. A real directory already there

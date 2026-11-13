@@ -34,10 +34,14 @@ that leaves `~/.claude` to the desktop app, which follows clauth's global accoun
 
 setup.sh installs these for both agents with the [Skills CLI](https://skills.sh), from `AGENT_SKILLS` in [setup/lib/common.sh](../../setup/lib/common.sh):
 
-- [conventional-commit](https://github.com/github/awesome-copilot/blob/main/skills/conventional-commit/SKILL.md) is the `type(scope): summary` format my instructions ask for in my own repos and in any repo that already uses it. it's the one skill setup.sh takes from awesome-copilot (`source@skill` in `AGENT_SKILLS`).
 - [humanizer](https://github.com/blader/humanizer) rewrites text that reads as AI-written. my instructions ask for a pass on docs, comments, PR bodies, and commit messages.
 - [install-anti-slop](https://github.com/dmmulroy/anti-slop) vendors dmmulroy's anti-slop Oxlint rules into a repo, or updates a copy that's already there.
 - [riftri-worktrees](https://github.com/assistant-ui/riftri/blob/main/skills/riftri-worktrees/SKILL.md) is how agents make and clean up the [riftri](https://riftri.dev) worktrees my instructions ask for. setup.sh installs the `riftri` CLI itself as a pnpm global.
+- [javascript-testing-expert](https://github.com/dubzzz/fast-check/tree/main/skills/javascript-testing-expert) writes vitest and fast-check tests the way my tests rules ask.
+- [domain-modeling](https://github.com/mattpocock/skills), [grilling and grill-with-docs](https://github.com/mattpocock/skills) keep a project's glossary and ADRs, and question a plan before it's built.
+- [impeccable](https://github.com/pbakaus/impeccable) is the design and critique skill I keep beside my own `ui`.
+- [ratatui-tui](https://github.com/blacktop/dotfiles/tree/main/ai/skills/ratatui-tui) covers ratatui terminal UIs.
+- [review-logging-patterns](https://www.evlog.dev) is evlog's own guide to adopting it, which my logging rule asks for.
 
 my own skills live in [skills/](./skills): rules from my instructions that only matter in some projects, or that need a script, so they load when needed instead of in every session. setup.sh links each skill's files into `~/.agents/skills` and the folder into `~/.claude/skills`.
 
@@ -53,7 +57,7 @@ my own skills live in [skills/](./skills): rules from my instructions that only 
 
 setup.sh installs Roast's skill with `roast skill install`, into `~/.agents/skills` with a symlink from `~/.claude/skills`, and refreshes it on every run. it tells agents when to run a review and how to read the findings. [oneshot.md](../../oneshot.md#roast-both-platforms) covers the config and the key it needs.
 
-[setup/television.sh](../../setup/television.sh) puts Television's own skills (`television` and `tv-*`) in the same places with `tv skills install`, and reinstalls them on every run. every Claude Code session gets them: `clauth start` runtimes link `skills` back to `~/.claude/skills` (only `--isolated` leaves them out). Codex's sandbox would block `tv` reaching its server on localhost and writing to `~/.television/artifacts`, so setup also links [codex-television.rules](./codex-television.rules) into `~/.codex/rules`, which runs the everyday `tv` commands outside the sandbox (deleting, removing channels and admin commands still ask), and sets Codex's `default_permissions` to a `television` profile: its own `:workspace` plus write access to that one directory. if `config.toml` already sets `default_permissions` or `sandbox_mode`, setup leaves it alone and prints the lines to add.
+[setup/television.sh](../../setup/television.sh) puts Television's own skills (`television` and `tv-*`) in `~/.agents/skills` for Codex with `tv skills install`, and reinstalls them on every run. Claude Code doesn't get them, since its artifacts make the same pages. Codex's sandbox would block `tv` reaching its server on localhost and writing to `~/.television/artifacts`, so setup also links [codex-television.rules](./codex-television.rules) into `~/.codex/rules`, which runs the everyday `tv` commands outside the sandbox (deleting, removing channels and admin commands still ask), and sets Codex's `default_permissions` to a `television` profile: its own `:workspace` plus write access to that one directory. if `config.toml` already sets `default_permissions` or `sandbox_mode`, setup leaves it alone and prints the lines to add.
 
 a global install keeps one copy of each in `~/.agents/skills`, which Codex reads directly, and symlinks it into `~/.claude/skills`. setup skips a skill that's already installed, so updating is a separate step:
 
