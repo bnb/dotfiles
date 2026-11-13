@@ -123,17 +123,12 @@ setup_television() {
   service_path="$PNPM_HOME/bin:$node_dir:/usr/bin:/bin:/usr/sbin:/sbin"
 
   # Reinstalled every run, since they change with each release. Codex reads
-  # ~/.agents/skills as is, and Claude Code gets the same relative symlinks the
-  # Skills CLI makes.
+  # ~/.agents/skills as is. Claude Code doesn't get them: its artifacts cover
+  # the same pages, and two ways to make one pull agents in two directions.
   if ! "$tv" skills install "$HOME/.agents/skills"
   then
     record_failure "tv skills install"
   fi
-  for skill in "$HOME/.agents/skills/television" "$HOME/.agents/skills"/tv-*
-  do
-    [ -d "$skill" ] || continue
-    link_claude_skill "$(basename "$skill")"
-  done
 
   status="$("$tv" status 2>/dev/null || true)"
   home="$(printf '%s' "$status" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).home' 2>/dev/null || true)"

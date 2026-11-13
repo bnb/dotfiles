@@ -21,7 +21,7 @@ me. It's all idempotent, so re-running it on a machine that's already set up is 
 - adds my agent guardrails (no attribution lines, pushes asking first) to Claude Code's settings and Codex's rules, and links my own skills from [configs/ai/skills](./configs/ai/skills) for both agents. details in [configs/ai](./configs/ai/README.md#guardrails)
 - on a machine with `~/GitHub/assistant-ui`, starts Claude in VS Code on the work clauth profile, so it doesn't share an account with the Claude desktop app, and on macOS keeps `clauth daemon` running under launchd. details in [configs/ai](./configs/ai/README.md#claude-accounts)
 - installs [Roast](https://github.com/bluesky-social/roast), the cross-model code reviewer, links [configs/roast/config.yaml](./configs/roast/config.yaml) to where roast reads its config, and installs its agent skill. details [below](#roast-both-platforms)
-- sets up [Television](https://television.run), the display my agents put things on: `tv` as a pnpm global, its skills for both agents, and its server as a login service (launchd or systemd). details [below](#television-both-platforms)
+- sets up [Television](https://television.run), the display my agents put things on: `tv` as a pnpm global, its skills for Codex, and its server as a login service (launchd or systemd). details [below](#television-both-platforms)
 
 anything it's about to replace gets copied to `<file>.backup.<timestamp>` first.
 
@@ -82,7 +82,7 @@ roast asks once per repo, on the first interactive review, whether to install it
 
 ### Television (both platforms)
 
-[setup/television.sh](./setup/television.sh), which also runs on its own (`./setup/television.sh`) to set up or repair just Television. it follows [television.run's install guide](https://television.run/install.md): `@telepath-computer/television` from pnpm, `tv skills install ~/.agents/skills` with the same symlinks into `~/.claude/skills` the Skills CLI makes, then `tv serve --persist`.
+[setup/television.sh](./setup/television.sh), which also runs on its own (`./setup/television.sh`) to set up or repair just Television. it follows [television.run's install guide](https://television.run/install.md): `@telepath-computer/television` from pnpm, `tv skills install ~/.agents/skills` (Codex only: Claude Code makes artifacts instead), then `tv serve --persist`.
 
 the service keeps the `PATH` it was installed with, and fnm's per-shell entry on `$PATH` is gone once that shell closes. so the service gets fnm's `default` alias or asdf's shims instead, whichever has node 22.12 or later, and setup records a failure if neither does. it only restarts the service when it isn't already healthy on the installed version, and it reinstalls the skills every run since they change with each release. upgrading is `pnpm update -g @telepath-computer/television`, then `./setup/television.sh`. it also opens Codex's sandbox just enough for Television, see [configs/ai](./configs/ai/README.md#skills).
 
