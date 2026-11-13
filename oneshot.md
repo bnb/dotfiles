@@ -29,7 +29,7 @@ anything it's about to replace gets copied to `<file>.backup.<timestamp>` first.
 
 `MACOS_FORMULAE` in [setup/macos.sh](./setup/macos.sh).
 
-`git-lfs` because the committed `.gitconfig` sets the lfs filter as `required`, which fails every checkout of an LFS repo on a machine without it. `asdf` is the one node version manager on macOS, since it's the one `~/.zshrc` turns on here; `brew install nvm` or `fnm` if a machine needs the other.
+`git-lfs` because the committed `.gitconfig` sets the lfs filter as `required`, which fails every checkout of an LFS repo on a machine without it. `fnm` is the one node version manager on macOS, since it's the one `~/.zshrc` turns on here; `brew install nvm` or `asdf` if a machine needs a different one.
 
 `bash` and `shellcheck` are there for editing this repo: macOS ships bash 3.2 from 2007, and `setup.sh` has to keep working under it because that's the only bash a fresh machine has. having a modern bash and a linter around makes checking that a lot easier.
 

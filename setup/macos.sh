@@ -247,11 +247,11 @@ EOF
 # Packages
 # -----------------------------------------------------------------------------
 
-# One node version manager: asdf, the one PERSONAL_SETUP_ASDF below loads.
+# One node version manager: fnm, the one PERSONAL_SETUP_FNM below loads.
 # git-lfs because the committed .gitconfig sets the lfs filter as required, and
 # a required filter with no binary behind it fails every checkout of an LFS repo.
 # ripgrep and fd for searching, since they skip .gitignored paths like node_modules.
-MACOS_FORMULAE="git git-lfs gh opencode asdf pnpm starship python3 bash shellcheck rust ripgrep fd alyraffauf/tap/tg"
+MACOS_FORMULAE="git git-lfs gh opencode fnm pnpm starship python3 bash shellcheck rust ripgrep fd alyraffauf/tap/tg"
 
 # Verified against the Homebrew API. Three of these used to be wrong:
 #   google-chrome-canary        -> 404, it is google-chrome@canary
@@ -277,7 +277,7 @@ main_macos() {
   finalize_shell_config \
     PERSONAL_SETUP_MACOS \
     PERSONAL_SETUP_MACOSBREW \
-    PERSONAL_SETUP_ASDF \
+    PERSONAL_SETUP_FNM \
     PERSONAL_SETUP_STARSHIP
 
   run_clauth_daemon || true
