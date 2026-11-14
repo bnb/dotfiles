@@ -15,17 +15,18 @@ many sessions have PRs open against the same repo and I want them merged in the 
 1. read the target branch's rules before planning: required checks, up to date before merging, approvals dismissed on push, approval of the latest push, code owners, merge queue. two coordinators got this wrong and stalled merges.
 2. run `coord merge-plan --repo <repo> --base origin/main '#12=origin/bnb/a' '#13=origin/bnb/b' <worktree>...`. heads can be refs, `label=ref`, or worktree paths, so unpushed work counts too.
 3. adjust for what the tool can't see, in this priority:
-   - fixes that unbreak main
+   - fixes that unbreak main, and other required or breaking PRs that change how the system operates (rulesets, CI gates, merge tooling, security fixes)
+   - external contributors' PRs (anyone but me and my bot accounts), so they see their work land sooner. when an external PR and one of mine conflict, mine takes main second
    - CI speedups and flake fixes
    - stacks bottom-up
    - numbered migrations in sequence
    - shared budgets (bundle size, perf)
-   - when it's otherwise balanced, PRs that merge cleanly and don't need slow CI reruns
+   - when it's otherwise balanced, an external PR first, then PRs that merge cleanly and don't need slow CI reruns
 4. a clean, approved PR merges now if everything it conflicts with needs a push anyway. the second lander resolves the conflict.
 5. if most pairs conflict on the same hot files (a CHANGELOG, a registry, a TODO), land a refactor that takes those lines away first. one changelog-fragments PR once cut about 20 push rounds down to one per PR.
 6. rerun the plan on every new approval and before every push you allow.
 
-send each owner its position, what it conflicts with, and when to push. a staged push waits until every queued PR it conflicts with has landed, because a push re-runs CI and, under either approval rule, needs a fresh approval.
+send each owner its position, what it conflicts with, and when to push. briefs to a sequencer or merge coordinator carry this order, external PRs included. a staged push waits until every queued PR it conflicts with has landed, because a push re-runs CI and, under either approval rule, needs a fresh approval.
 
 ## after each landing
 
