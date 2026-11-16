@@ -806,16 +806,23 @@ write_tangled_gitconfig() {
 # rewrites it. Included by ./gitconfig.
 
 # HTTPS goes through tg, which reads TG_ACCOUNT and so mints a short-lived push
-# token for the repo's knot as $1. The empty helper first clears anything set
-# before this point, like osxkeychain.
-[credential "https://tangled.org"]
-	helper =
-	helper = !'$3' auth git-credential
+# token for the repo's knot as $1. tangled.org forwards a push to that knot
+# (knot1.tangled.sh and the like), and git asks the knot's host for
+# credentials too. The empty helper first clears anything set before this
+# point, like osxkeychain.
+EOF
+    for host in tangled.org '*.tangled.sh'
+    do
+      printf '[credential "https://%s"]\n\thelper =\n' "$host"
+      printf "\thelper = !'%s' auth git-credential\n" "$3"
+    done
+
+    cat <<EOF
 
 # SSH would authenticate with my personal key from the 1Password agent, so
 # Tangled SSH remotes go over HTTPS instead - and tangled.sh remotes go to
-# tangled.org, the only host tg's credential helper answers for. Repos on a
-# self-hosted knot keep their own URLs.
+# tangled.org, since tg's credential helper only answers for tangled.org and
+# the repo's own knot. Repos on a self-hosted knot keep their own URLs.
 [url "https://tangled.org/"]
 EOF
     for host in $TANGLED_HOSTS
