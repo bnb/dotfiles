@@ -762,6 +762,10 @@ Host github.com ssh.github.com
 	IdentityAgent "$1"
 	IdentityFile "$AI_GITHUB_AUTH_KEY"
 	IdentitiesOnly yes
+	# A push runs the pre-push hook with the connection already open, and a long hook left it
+	# idle until GitHub dropped it (the push then fails with a signal or exit 141).
+	ServerAliveInterval 30
+	ServerAliveCountMax 10
 
 # Everything else as usual. -F skips the system-wide config too, so that comes
 # back as well. GitHub is excluded: ssh adds up IdentityFiles from every block
