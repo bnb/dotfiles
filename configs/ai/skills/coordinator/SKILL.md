@@ -45,7 +45,7 @@ other sessions' "fixed", "pushed", tallies, exit codes, and "1Password is waitin
 ## shared machine
 
 - usage: `clauth` profiles show headroom. never switch the global profile, since it moves every session. a session whose login died gets one retry, then "/login in `<session>`" goes on my list. MCP auth is per session.
-- load: map heavy processes to sessions (`lsof -d cwd`) and ask the owner to pace or prune. never kill another session's processes.
+- load: map heavy processes to sessions (`lsof -d cwd`) and ask the owner to pace or prune. never kill another session's processes. heavy runs go through slots: see the heavy-slots skill.
 - Monitor ends after 30 minutes and background Bash after 2 hours. run long chains detached and watch their log with `tail -F`. stop re-arming watchers once there's nothing left to wait for.
 
 ## winding down
